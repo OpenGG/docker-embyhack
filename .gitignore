@@ -1,0 +1,177 @@
+# ---- OS ----
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---- IDEs & Editors ----
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sw?
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+*.log
+
+# ---- Node.js ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log
+package-lock.json
+.pnpm-store/
+dist/
+coverage/
+.env
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+eggs/
+lib/
+lib64/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+.ipynb_checkpoints
+*.ipynb
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+.cache/
+.env
+
+# ---- Java ----
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+*.log
+*.jks
+target/
+build/
+
+# ---- C / C++ ----
+*.obj
+*.o
+*.so
+*.exe
+*.out
+*.a
+*.dll
+*.lib
+*.dSYM/
+*.vcxproj*
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# ---- .NET ----
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.vs/
+*.suo
+*.user
+*.sln.docstates
+
+# ---- Rust ----
+target/
+Cargo.lock
+
+# ---- Go ----
+bin/
+pkg/
+*.exe
+
+# ---- Ruby ----
+*.gem
+*.rbc
+.bundle/
+log/
+tmp/
+vendor/bundle/
+coverage/
+spec/reports/
+test/tmp/
+test/version_tmp/
+
+# ---- PHP ----
+vendor/
+composer.lock
+
+# ---- General build files ----
+*.log
+*.tmp
+*.bak
+*.swp
+*.lock
+*.tgz
+*.gz
+*.zip
+
+# ---- Secrets & sensitive info ----
+*.env
+*.env.*
+*.key
+*.pem
+*.crt
+
+# ---- Others ----
+*.sqlite
+*.db
+*.pid
+*.seed
+*.pid.lock
+*.dump
+*.log.*
+.cache/
+*.orig
+
+# ---- Docker ----
+*.pid
+*.seed
+*.pid.lock
+.dockerignore
+Dockerfile.*
+docker-compose.override.yml
+
+# ---- Terraform ----
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
+# ---- Misc ----
+*.bak
+*.old
+*.tmp
+*.rej
+*.swo
+*.swn
+*.swp

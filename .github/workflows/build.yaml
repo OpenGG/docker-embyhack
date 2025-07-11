@@ -1,0 +1,73 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      your_mb3admin_replacement_url:
+        description: >-
+          URL for Emby's server replacement. Must starts with 'http' and end with a '/'.
+        type: string
+        required: true
+        default: https://mb3admin.megm.workers.dev/
+      # remote_debug:
+      #   description: >-
+      #     Starts an SSH session to debug the runner. For advanced troubleshooting only.
+      #   type: boolean
+      #   required: false
+      #   default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      EMBY_REPLACEMENT_URL: ${{ inputs.your_mb3admin_replacement_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Start debug session (when enabled)
+        if: ${{ inputs.remote_debug }}
+        uses: lhotari/action-upterm@v1
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org/
+
+      - name: Verify environment node
+        run: |
+          node --version
+          npm --version
+          pnpm --version
+
+      - name: Maintain debug session (when enabled)
+        run: |
+          sleep 3600
+        if: ${{ inputs.remote_debug }}
+
+      - name: Verify environment os
+        run: |
+          ./scripts/dep_ildasm_ilasm.sh ildasm
+          ./scripts/dep_ildasm_ilasm.sh ilasm
+          ./scripts/0_prepare.sh
+
+      - name: Build
+        run: |
+          ./scripts/run_all.sh
+          mv tmp/output embyhack
+
+      - name: Validate artifact
+        run: test -d embyhack
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-embyhack
+          path: embyhack
