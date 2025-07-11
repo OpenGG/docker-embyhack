@@ -1,0 +1,34 @@
+name: GitHub CI
+on:
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  build:
+    name: Build
+    runs-on: windows-latest
+    defaults:
+        run:
+          shell: cmd
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4.3.1
+        with:
+          dotnet-version: 8.0.x
+          dotnet-quality: ga
+
+      - uses: microsoft/setup-msbuild@v2.0.0
+
+      # Enable tmate debugging of manually-triggered workflows if the input option was provided
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
