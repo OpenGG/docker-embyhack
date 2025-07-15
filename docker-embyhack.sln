@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "scripts", "scripts", "{B3BE879C-5398-4EBC-8594-25F33050ACEB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dotnet", "dotnet", "{803379C9-0F88-49B2-AB6F-365E7E3AFBA2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StringReplacer", "scripts\dotnet\StringReplacer\StringReplacer.csproj", "{68325623-A515-4C48-8199-162634BDC6EC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "scripts\dotnet\TestApp\TestApp.csproj", "{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68325623-A515-4C48-8199-162634BDC6EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68325623-A515-4C48-8199-162634BDC6EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68325623-A515-4C48-8199-162634BDC6EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68325623-A515-4C48-8199-162634BDC6EC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{803379C9-0F88-49B2-AB6F-365E7E3AFBA2} = {B3BE879C-5398-4EBC-8594-25F33050ACEB}
+		{68325623-A515-4C48-8199-162634BDC6EC} = {803379C9-0F88-49B2-AB6F-365E7E3AFBA2}
+		{632E0FC6-1359-4F2E-8D0D-D3FDEDDE9630} = {803379C9-0F88-49B2-AB6F-365E7E3AFBA2}
+	EndGlobalSection
+EndGlobal
