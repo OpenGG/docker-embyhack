@@ -1,0 +1,15 @@
+{
+    "type": "module",
+    "scripts": {
+        "build:crypto": "tsx build-crypto.js",
+        "edit": "tsx src/edit.js",
+        "preprocess-il": "tsx src/preprocess-il.js",
+        "test": "tsx src/il/*.test.ts"
+    },
+    "devDependencies": {
+        "@swc/helpers": "^0.5.17",
+        "esbuild": "^0.25.6",
+        "esbuild-plugin-es5": "^2.1.1",
+        "tsx": "^4.20.3"
+    }
+}

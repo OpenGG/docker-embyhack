@@ -1,0 +1,26 @@
+version: "2.1"
+services:
+  emby:
+    image: linuxserver/emby:4.8.11
+    container_name: emby
+    environment:
+       # 你的 pid and gid
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Shanghai
+    volumes:
+      # emby 的配置目录
+      - ./config:/config
+
+      # 按需配置媒体目录
+      - ./data:/data
+
+      # 替换 docker 容器内文件
+    ports:
+      - 8096:8096
+    devices:
+      - /dev/dri:/dev/dri
+    restart: unless-stopped
+
+# 其他参数的具体含义，请查阅容器的官方文档
+# 使用到的 emby 容器        https://hub.docker.com/r/linuxserver/emby
