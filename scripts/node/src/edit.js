@@ -17,9 +17,6 @@ const validate = () => {
 
 const main = () => {
     validate();
-    if (!filePath) {
-        throw new Error('File path must be provided as a command line argument');
-    }
 
     const content = readFileSync(filePath, 'utf8');
     const output = replaceContent(content);

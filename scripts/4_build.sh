@@ -21,7 +21,7 @@ cd "$path_kitchen" || {
 # ---------- Build the Project ----------
 echo "Building the project..."
 
-rm -rf $path_output
+rm -rf "$path_output"
 
 # use rsync to clone the directory structure
 rsync -r $path_script/output_template/ $path_output

@@ -86,11 +86,11 @@ for dll in $emby_target_dll; do
 
     # Decompile the DLL using ilspycmd
     if ! ilasm -dll "$path_decompiled/$base_name/$base_name.il" -out="$path_stash_dll/$dll"; then
-        echo "Error: Failed to decompile $dll."
+        echo "Error: Failed to recompile $dll."
         exit 1
     fi
 
-    echo "Successfully decompiled ${dll}"
+    echo "Successfully recompiled ${dll}"
 done
 
 

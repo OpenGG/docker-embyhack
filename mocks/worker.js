@@ -25,10 +25,8 @@ const pathConfig = {
     key: '',
   },
   '/emby/Plugins/SecurityInfo': {
-    // Note: Keys in a JSON object need to be wrapped in double quotes.
     SupporterKey: "",
     IsMBSupporter: true,
-  },
 };
 
 // Common CORS response headers.

@@ -45,7 +45,7 @@ download_and_extract() {
     exit 1
   }
 
-  cp "package/runtimes/linux-x64/native/$name" "${path_bin}/$name" || {
+  cp "package/runtimes/$arch/native/$name" "${path_bin}/$name" || {
     echo "Failed to copy $name binary."
     exit 1
   }

@@ -36,7 +36,7 @@ check_dependency() {
 print_install_instructions() {
     local tool="$1"
     local install_cmd="$2"
-    echo -e "  \e[32m${install_cmd}\e[0m"
+    echo -e "    \e[32m${install_cmd}\e[0m"
 }
 
 # ---------- Main Script ----------
@@ -48,8 +48,8 @@ declare -A dependencies=(
     ["dotnet"]="sudo apt update && sudo apt install -y dotnet-sdk-8.0"  # Dotnet SDK installation command
     ["rsync"]="sudo apt update && sudo apt install -y rsync"  # yq installation command
     ["yq"]="sudo curl -L \\
-    https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd64 \\
-    -o /usr/local/bin/yq &&\\
+        https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd64 \\
+        -o /usr/local/bin/yq &&\\
     sudo chmod +x /usr/local/bin/yq"  # yq installation command
     # ["ilspycmd"]="dotnet tool install --global ilspycmd"  # ilspycmd installation command
     # ["ilrepack"]="dotnet tool install --global dotnet-ilrepack"  # ilrepack installation command
@@ -87,7 +87,7 @@ if [ ${#missing_tools[@]} -ne 0 ]; then
     done
     
     # Provide a final instruction for setting the path for dotnet tools
-    echo -e "  \e[32mexport PATH=\"\$PATH:\$HOME/.dotnet/tools\"\e[0m"
+    echo -e "    \e[32mexport PATH=\"\$PATH:\$HOME/.dotnet/tools\"\e[0m"
     echo ""
 
     exit 1

@@ -104,4 +104,4 @@ export path_output="${path_kitchen}/output"
 export file_manifest_js="${path_kitchen}/manifest_js.txt"
 export file_manifest_dll="${path_kitchen}/manifest_dll.txt"
 
-export PATH="${path_node}:${PATH}"
+# export PATH="${path_node}:${PATH}"
