@@ -18,7 +18,7 @@ export const config = {
 
 export const validateConfig = () => {
     if (!config.targetUrls.length) {
-        throw new Error('TARGET_URLS environment variable must be set and not empty');
+        throw new Error('EMBY_TARGET_URL environment variable must be set and not empty');
     }
     if (!config.replacementUrl) {
         throw new Error('REPLACEMENT_URL environment variable must be set');
