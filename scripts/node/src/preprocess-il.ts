@@ -11,11 +11,8 @@ import { Processor } from './il/processor'
  * @param {string} inputFile - Path to the input IL file
  * @returns {void}
  */
-async function processIL(inputFile) {
+async function processIL(inputFile, outputFile) {
     try {
-        // Read the input IL file
-        const outputFile = `${inputFile}.PREPROCESSED`
-
         // Open the input file (for reading)
         const readHandle = await open(inputFile, 'r');
         // Open the output file (for writing)
@@ -65,17 +62,20 @@ const main = async () => {
 
     // Get the input file from command line arguments
     const inputFile = process.argv[2];
-
-    if (!inputFile) {
-        console.error('❌ Please provide an input file as an argument.');
-        process.exit(1);
-    }
+    const outputFile = process.argv[3];
 
     try {
+        if (!inputFile) {
+            throw new Error('❌ Please provide an input file as an argument.');
+        }
+
+        if (!outputFile) {
+            throw new Error('❌ Please provide an output file as an argument.');
+        }
         // Process the IL file
         console.log(`📝 Processing ${inputFile}...`);
 
-        await processIL(inputFile);
+        await processIL(inputFile, outputFile);
     } catch (e) {
         console.error('❌ Error processing file: ', e.message);
         process.exit(1);

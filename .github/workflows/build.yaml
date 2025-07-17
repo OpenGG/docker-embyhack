@@ -24,7 +24,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Start debug session (when enabled)
         if: ${{ inputs.remote_debug }}
         uses: lhotari/action-upterm@v1
@@ -41,6 +41,11 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org/
 
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.44.0
+
       - name: Verify environment node
         run: |
           node --version
@@ -54,14 +59,12 @@ jobs:
 
       - name: Verify environment os
         run: |
-          ./scripts/dep_ildasm_ilasm.sh ildasm
-          ./scripts/dep_ildasm_ilasm.sh ilasm
-          ./scripts/0_prepare.sh
+          ./build.sh prepare
 
       - name: Build
         run: |
-          ./scripts/run_all.sh
-          mv tmp/output embyhack
+          ./build.sh
+          mv ./tmp/dist embyhack
 
       - name: Validate artifact
         run: test -d embyhack
