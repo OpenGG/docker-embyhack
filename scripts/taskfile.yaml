@@ -14,11 +14,6 @@ version: '3'
 # ---
 
 vars:
-  # --- User Configuration ---
-  # These variables are intended to be configured by the user or overridden from the command line.
-  EMBY_VERSION: "4.8.11.0"
-  EMBY_REPLACEMENT_URL: "https://example.com/"
-
   # --- Internal Paths & Commands ---
   # These variables define the directory structure and commands for the build process.
   # They are less likely to be changed by the user.
@@ -39,9 +34,11 @@ vars:
   COMMAND_COPY_RECURSIVE: "rsync -av -q "
 
 env:
+  # --- User Configuration ---
   # Expose configuration variables as environment variables for use in scripts.
-  EMBY_VERSION: "{{.EMBY_VERSION}}"
-  EMBY_REPLACEMENT_URL: "{{.EMBY_REPLACEMENT_URL}}"
+  EMBY_VERSION: "4.8.11.0"
+  EMBY_REPLACEMENT_URL: "https://mb3admin.megm.workers.dev/"
+
   # Derived environment variables
   EMBY_PACKAGE: "emby-server-deb_{{.EMBY_VERSION}}_amd64.deb"
   EMBY_DOWNLOAD_URL: "https://github.com/MediaBrowser/Emby.Releases/releases/download/{{.EMBY_VERSION}}/{{.EMBY_PACKAGE}}"
