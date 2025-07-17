@@ -11,7 +11,7 @@ import { Processor } from './il/processor'
  * @param {string} inputFile - Path to the input IL file
  * @returns {void}
  */
-async function processIL(inputFile, outputFile) {
+async function processIL(inputFile: string, outputFile: string) {
     try {
         // Open the input file (for reading)
         const readHandle = await open(inputFile, 'r');
