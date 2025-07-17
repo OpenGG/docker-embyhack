@@ -1,35 +1,48 @@
 version: '3'
 
-# silent: true
+# ---
+# Taskfile for building a modified Emby Server package.
+#
+# This script automates the process of downloading a specific Emby Server version,
+# decompiling certain DLLs, applying custom modifications to the source (IL and JS),
+# and then recompiling and packaging the final result.
+#
+# Main commands:
+#   - task: Runs the entire build process.
+#   - task clean: Removes all build artifacts.
+#   - task install_on_ubuntu: Installs all required dependencies on a fresh Ubuntu system.
+# ---
 
-# --- Configuration Variables ---
-# These variables define important root paths and general settings for the build process.
-# You can override these from the command line, e.g., `task -v EMBY_VERSION=...`
 vars:
+  # --- User Configuration ---
+  # These variables are intended to be configured by the user or overridden from the command line.
+  EMBY_VERSION: "4.8.11.0"
+  EMBY_REPLACEMENT_URL: "https://example.com/"
+
+  # --- Internal Paths & Commands ---
+  # These variables define the directory structure and commands for the build process.
+  # They are less likely to be changed by the user.
   PATH_TMP:
     sh: realpath .
   PATH_BIN: "{{.PATH_TMP}}/bin"
   PATH_NODE: "{{.TASKFILE_DIR}}/node"
   PATH_DIST_TEMPLATE: "{{.TASKFILE_DIR}}/dist-template"
   PATH_BUILD_ROOT: "{{.PATH_TMP}}/build"
-  # Define base step paths, these are then specialized as input/output/staging within tasks
   PATH_STEP_DOWNLOAD: "{{.PATH_BUILD_ROOT}}/1-download"
   PATH_STEP_UNPACK: "{{.PATH_BUILD_ROOT}}/2-unpack"
   PATH_STEP_DECOMPILE: "{{.PATH_BUILD_ROOT}}/3-decompile"
   PATH_STEP_EDIT: "{{.PATH_BUILD_ROOT}}/4-edit"
   PATH_STEP_BUILD: "{{.PATH_BUILD_ROOT}}/5-build"
   PATH_DIST: "{{.PATH_BUILD_ROOT}}/dist"
-
   COMMAND_COMPILE_DLL: "{{.PATH_BIN}}/ilasm -quiet -dll "
   COMMAND_DECOMPILE_DLL: "{{.PATH_BIN}}/ildasm -all -typelist -metadata=raw "
   COMMAND_COPY_RECURSIVE: "rsync -av -q "
-  # PATH_EMBY_SYSTEM: "{{.PATH_STEP2_UNPACKED}}" # Path to Emby system files
 
-# --- Environment Variables ---
-# These variables are exposed as environment variables to the shell commands executed by tasks.
 env:
-  EMBY_VERSION: "4.8.11.0"
-  EMBY_REPLACEMENT_URL: "https://example.com/"
+  # Expose configuration variables as environment variables for use in scripts.
+  EMBY_VERSION: "{{.EMBY_VERSION}}"
+  EMBY_REPLACEMENT_URL: "{{.EMBY_REPLACEMENT_URL}}"
+  # Derived environment variables
   EMBY_PACKAGE: "emby-server-deb_{{.EMBY_VERSION}}_amd64.deb"
   EMBY_DOWNLOAD_URL: "https://github.com/MediaBrowser/Emby.Releases/releases/download/{{.EMBY_VERSION}}/{{.EMBY_PACKAGE}}"
   EMBY_TARGET_DLL: "Emby.Server.Implementations.dll Emby.Web.dll"
@@ -42,12 +55,12 @@ tasks:
   # --- Main Build Process Tasks ---
 
   default:
-    desc: "Runs the entire build process from start to finish."
+    desc: "Runs the entire build process from start to finish (alias for 'all')."
     cmds:
       - task: all
 
   all:
-    desc: "Alias for the 'build' task, runs all steps in order."
+    desc: "Runs all build steps in order, creating the final distributable package."
     deps: [dist]
     cmds:
       - |
@@ -55,217 +68,167 @@ tasks:
         echo "The final output package is in: {{.PATH_DIST}}"
 
   dist:
-    desc: "Make distribution package."
+    desc: "Packages the final build into the 'dist' directory."
     deps: [build]
     vars:
       PATH_INPUT: "{{.PATH_STEP_BUILD}}"
-      # Output directory for the final built package
       PATH_OUTPUT: "{{.PATH_DIST}}"
     cmds:
-      - |
-        rm -rf "{{.PATH_OUTPUT}}"
-        {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/" "{{.PATH_OUTPUT}}/"
+      - rm -rf "{{.PATH_OUTPUT}}"
+      - '{{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/" "{{.PATH_OUTPUT}}/"'
 
   build:
-    desc: "Step 5: Build the final package from modified and recompiled files."
+    desc: "Step 5: Assembles the final package from modified and recompiled files."
     deps: [edit]
     vars:
-      # Input directory for edited files (DLLs and JS)
       PATH_INPUT: "{{.PATH_STEP_EDIT}}"
-      # Output directory for the final built package
       PATH_OUTPUT: "{{.PATH_STEP_BUILD}}"
-      # Staging directory for intermediate build steps
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
     status:
-      # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 5] Building Final Package ---"
-      # Clean up any previous staging directory
+      - rm -rf {{.PATH_STAGING}}
       - |
-        rm -rf {{.PATH_STAGING}}
-
-        # Create the staging directory
-
+        # Create staging directory
         mkdir -p {{.PATH_STAGING}}/system/
         cd {{.PATH_STAGING}}
 
+        # Copy template files (e.g., docker-compose.yml) to the staging area
         echo "Copying output template files..."
-        # Copy additional files from the output template
-
         rsync -a {{.PATH_DIST_TEMPLATE}}/ {{.PATH_STAGING}}/
 
+        # Copy the modified and recompiled files into the staging area
         echo "Copying modified DLL and JS files..."
-        # Copy the recompiled DLLs and modified JS files over the original ones
         {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/dll/" "{{.PATH_STAGING}}/system/"
         {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/js/" "{{.PATH_STAGING}}/system/"
 
+        # Build the custom crypto.js polyfill and place it in the correct location
         echo "Building and placing crypto.js..."
         bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run build:crypto'
         polyfil_path="{{.PATH_STAGING}}/system/dashboard-ui/modules/polyfills"
         mkdir -p "$polyfil_path"
         cp "{{.PATH_NODE}}/dist/crypto.js" "$polyfil_path/crypto.js"
 
+        # Dynamically update docker-compose.yml to mount all modified files as volumes
         echo "Updating docker-compose.yml with volume mappings for modified files..."
-        # Navigate to the staging directory and update docker-compose.yml to mount modified files
         cd {{.PATH_STAGING}} && for file in $(find system -type f); do
           file=$file yq e '.services.emby.volumes += ("./system/" + env(file) + ":/app/emby/" + env(file) + ":ro")' -i docker-compose.yml
         done
-
-      # Move the completed staging directory to the final output directory
       - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
       - echo "✅ Step 5 complete."
 
   edit:
-    desc: "Step 4: Edit decompiled IL files and JavaScript, then recompile DLLs."
+    desc: "Step 4: Modifies decompiled IL files and JS, then recompiles DLLs."
     deps: [decompile]
     vars:
-      # Input directory containing decompiled IL and stashed JS files
       PATH_INPUT: "{{.PATH_STEP_DECOMPILE}}"
-      # Output directory for edited and recompiled files
       PATH_OUTPUT: "{{.PATH_STEP_EDIT}}"
-      # Staging directory for intermediate editing and recompilation steps
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
       PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
       PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
     status:
-      # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 4] Editing and Recompiling Files ---"
-
+      - rm -rf {{.PATH_STAGING}}
+      - '{{.COMMAND_COPY_RECURSIVE}} {{.PATH_INPUT}}/ {{.PATH_STAGING}}/'
       - |
-          rm -rf {{.PATH_STAGING}}
-
-          echo "Copying original JS files to staging area for editing..."
-          {{.COMMAND_COPY_RECURSIVE}} {{.PATH_INPUT}}/ {{.PATH_STAGING}}/
-
-      - |
-        echo "Preprocessing IL files for modification..."
-        # Iterate through all IL files and preprocess them
+        # Preprocess IL files to prepare them for modification
+        echo "Preprocessing IL files..."
         for il_file in $(find {{.PATH_STAGING_IL}} -type f -name "*.il"); do
           echo "Preprocessing $il_file..."
           bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run preprocess-il "$0" "$1"' "$il_file" "$il_file.PREPROCESSED"
-          # Replace the original IL file with its preprocessed version
           mv "$il_file.PREPROCESSED" "$il_file"
         done
-
       - |
-        echo "Editing IL files to apply modifications (e.g., URL replacements)..."
-        # Find IL files containing "mb3admin" (target for modification) and edit them
+        # Apply edits to the IL files (e.g., URL replacements)
+        echo "Editing IL files..."
         target_il_files=$(find {{.PATH_STAGING_IL}} -type f -exec grep -l "mb3admin" {} +)
         for target_file in $target_il_files; do
           echo "Editing $target_file..."
           bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run edit "$0" "$1"' "$target_file" "$target_file.EDIT"
-          # If an edited version is created, replace the original IL file
           if [ -f "$target_file.EDIT" ]; then mv "$target_file.EDIT" "$target_file"; fi
         done
-
       - |
-        echo "Recompiling DLLs from modified IL files..."
-        # Recompile each target DLL from its corresponding modified IL files
+        # Recompile the modified IL files back into DLLs
+        echo "Recompiling DLLs..."
         for dll_file in {{.EMBY_TARGET_DLL}}; do
           echo "Recompiling $dll_file..."
           base_name=${dll_file%.dll}
           {{.COMMAND_COMPILE_DLL}} "{{.PATH_STAGING_IL}}/$base_name/$base_name.il" -out="{{.PATH_STAGING_DLL}}/$dll_file"
         done
-        # Clean up the temporary IL editing directory
-
       - |
-        echo "Editing JS files to apply modifications..."
-        # Iterate through all JS files in the staging directory and edit them
+        # Apply edits to the JavaScript files
+        echo "Editing JS files..."
         target_js_files=$(find {{.PATH_STAGING_JS}} -type f -name "*.js")
         for target_file in $target_js_files; do
           echo "Editing $target_file..."
           bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run edit "$0" "$1"' "$target_file" "$target_file.EDIT"
-          # If an edited version is created, replace the original JS file
           if [ -f "$target_file.EDIT" ]; then mv "$target_file.EDIT" "$target_file"; fi
         done
-
-      # Move the completed staging directory to the final output directory
       - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
       - echo "✅ Step 4 complete."
 
   decompile:
-    desc: "Step 3: Stash original files (JS and DLLs) and decompile DLLs into IL."
+    desc: "Step 3: Decompiles target DLLs into IL and stashes original JS files."
     deps: [unpack]
     vars:
       PATH_SYSTEM: "opt/emby-server/system"
-
-      # Input directory for original unpacked Emby system files
       PATH_INPUT: "{{.PATH_STEP_UNPACK}}"
-      # Output directory for stashed original files and decompiled IL
       PATH_OUTPUT: "{{.PATH_STEP_DECOMPILE}}"
-
-      # Staging directory for intermediate stashing and decompilation steps
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
       PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
       PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
     status:
-      # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 3] Stashing Originals and Decompiling DLLs ---"
-      # Clean up any previous staging directory
       - rm -rf {{.PATH_STAGING}}
-
       - |
-        # Create staging directories for decompiled IL, stashed JS, and stashed DLLs
+        # Copy the target JavaScript files from the unpacked source to a staging area
         mkdir -p {{.PATH_STAGING_JS}}
         echo "Stashing original JavaScript files..."
-        # Iterate through target JS files and copy them to the staging area
         for js_file in {{.EMBY_TARGET_JS}}; do
           mkdir -p "{{.PATH_STAGING_JS}}/$(dirname $js_file)"
           cp "{{.PATH_INPUT}}/{{.PATH_SYSTEM}}/$js_file" "{{.PATH_STAGING_JS}}/$js_file"
         done
-
       - |
+        # Copy the target DLLs to a staging area and then decompile them into IL
         echo "Stashing original DLLs and decompiling them into Intermediate Language (IL)..."
-        # Iterate through target DLL files, copy them to staging, and then decompile them
         mkdir -p {{.PATH_STAGING_DLL}}
         for dll_file in {{.EMBY_TARGET_DLL}}; do
+          # Stash the original DLL
           cp "{{.PATH_INPUT}}/{{.PATH_SYSTEM}}/$dll_file" "{{.PATH_STAGING_DLL}}/"
+          # Decompile the stashed DLL
           base_name=${dll_file%.dll}
           mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
           {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
         done
-
-      # Move the completed staging directory to the final output directory
       - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
       - echo "✅ Step 3 complete."
 
   unpack:
-    desc: "Step 2: Unpack the downloaded Emby server Debian package."
+    desc: "Step 2: Unpacks the downloaded Emby server Debian package."
     deps: [download]
     vars:
-      # Input path to the downloaded Emby Debian package
       PATH_INPUT: "{{.PATH_STEP_DOWNLOAD}}"
-      # Output directory for the unpacked files
       PATH_OUTPUT: "{{.PATH_STEP_UNPACK}}"
-      # Staging directory for the unpacking process
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
     status:
-      # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 2] Unpacking Emby ---"
-      # Clean up any previous staging directory
-      - |
-        rm -rf {{.PATH_STAGING}}
-        mkdir {{.PATH_STAGING}}
-
-      # Unpack the Debian package into the staging directory
+      - rm -rf {{.PATH_STAGING}}
+      - mkdir {{.PATH_STAGING}}
       - dpkg-deb -R "{{.PATH_INPUT}}/{{.EMBY_PACKAGE}}" "{{.PATH_STAGING}}"
-
-      # Move the unpacked contents from the staging directory to the final output directory
       - mv "{{.PATH_STAGING}}" "{{.PATH_OUTPUT}}"
-
       - echo "✅ Step 2 complete."
 
   download:
-    desc: "Step 1: Download the Emby server Debian package."
+    desc: "Step 1: Downloads the specified Emby server Debian package."
     deps: [prepare]
     vars:
       PATH_OUTPUT: "{{.PATH_STEP_DOWNLOAD}}"
@@ -274,37 +237,33 @@ tasks:
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 1] Downloading Emby ---"
-      # Clean up any previous staging directory
       - rm -rf {{.PATH_STAGING}}
       - mkdir -p {{.PATH_STAGING}}
-
-      # Download the Emby package to the staging directory
       - curl -o "{{.PATH_STAGING}}/{{.EMBY_PACKAGE}}" -L --fail "{{.EMBY_DOWNLOAD_URL}}"
-
-      # Move the downloaded package from the staging directory to the final output directory
-      - |
-        mv "{{.PATH_STAGING}}" "{{.PATH_OUTPUT}}"
-
+      - mv "{{.PATH_STAGING}}" "{{.PATH_OUTPUT}}"
       - echo "✅ Step 1 complete."
 
   prepare:
-    desc: "Step 0: Prepare the build environment and check for necessary dependencies."
+    desc: "Step 0: Prepares the build environment, checking and installing dependencies."
     cmds:
       - echo "--- [Step 0] Preparing Environment ---"
-
-      # cleanup
       - rm -rf "{{.PATH_BUILD_ROOT}}/*.staging"
-
-      # check dependencies
       - task: install_ilasm
       - task: install_ildasm
       - task: _check_system_deps
-
-      # setup pnpm
       - echo "Installing Node.js dependencies..."
       - bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm install'
-
       - echo "✅ Preparation complete."
+
+  # --- Cleanup Task ---
+
+  clean:
+    desc: "Removes all build artifacts, including build/, dist/, and bin/ directories."
+    cmds:
+      - echo "Cleaning up build artifacts..."
+      - rm -rf "{{.PATH_BUILD_ROOT}}"
+      - rm -rf "{{.PATH_BIN}}"
+      - echo "✅ Cleanup complete."
 
   # --- Utility Tasks for System Setup ---
 
@@ -405,7 +364,7 @@ tasks:
   # --- Helper & Internal Tool Installation Tasks ---
 
   install_ildasm:
-    desc: "Installs ildasm (IL Disassembler) if it is not already present."
+    desc: "Installs ildasm (IL Disassembler) if it is not already present in ./bin."
     status:
       - test -f {{.PATH_BIN}}/ildasm
     cmds:
@@ -413,7 +372,7 @@ tasks:
         vars: {name: 'ildasm', version: '9.0.7', url: "https://www.nuget.org/api/v2/package/runtime.linux-x64.Microsoft.NETCore.ILDAsm/9.0.7"}
 
   install_ilasm:
-    desc: "Installs ilasm (IL Assembler) if it is not already present."
+    desc: "Installs ilasm (IL Assembler) if it is not already present in ./bin."
     status:
       - test -f {{.PATH_BIN}}/ilasm
     cmds:
@@ -422,59 +381,41 @@ tasks:
 
   _check_system_deps:
     internal: true
-    desc: "Internal task to check for required system dependencies and guide installation."
+    desc: "Internal: Checks for required system dependencies and guides installation."
     status:
-      # Check for basic commands
       - command -v dotnet >/dev/null 2>&1
       - command -v rsync >/dev/null 2>&1
       - command -v yq >/dev/null 2>&1
       - command -v curl >/dev/null 2>&1
       - command -v unzip >/dev/null 2>&1
-      # Check for nvm, node, and pnpm.
-      # For nvm, check for the script file as `command -v nvm` might not work if not sourced.
-      # For node and pnpm, check using 'command -v' and ensure they are available in PATH
       - test -f "{{.NVM_DIR}}/nvm.sh" >/dev/null 2>&1
-      - bash -c '. {{.NVM_SH}} && command -v node >/dev/null 2>&1' # Ensure node is available via nvm sourcing
-      - bash -c '. {{.NVM_SH}} && command -v pnpm >/dev/null 2>&1' # Ensure pnpm is available via nvm sourcing
+      - bash -c '. {{.NVM_SH}} && command -v node >/dev/null 2>&1'
+      - bash -c '. {{.NVM_SH}} && command -v pnpm >/dev/null 2>&1'
     cmds:
       - |
         echo "Checking for system dependencies..."
-        RED='\033[31m'
-        GREEN='\033[32m'
-        BOLD='\033[1m'
-        RESET='\033[0m'
-
+        RED='\033[31m'; GREEN='\033[32m'; BOLD='\033[1m'; RESET='\033[0m'
         missing_deps=()
         install_commands=()
-
-        # Function to check and add missing dependency
         check_dep() {
-          local dep_name="$1"
-          local check_cmd="$2"
-          local install_task="$3"
+          local dep_name="$1"; local check_cmd="$2"; local install_task="$3"
           if ! eval "$check_cmd" >/dev/null 2>&1; then
             missing_deps+=("$dep_name")
             install_commands+=("./task.sh $install_task")
           fi
         }
-
-        # Check common build tools
         check_dep "dotnet" "command -v dotnet" "install_dotnet_sdk_on_ubuntu"
         check_dep "rsync" "command -v rsync" "install_rsync_on_ubuntu"
         check_dep "yq" "command -v yq" "install_yq_on_ubuntu"
         check_dep "curl" "command -v curl" "install_curl_on_ubuntu"
         check_dep "unzip" "command -v unzip" "install_unzip_on_ubuntu"
-        # Check Node.js related tools via nvm
         check_dep "nvm" "test -f \"{{.NVM_DIR}}/nvm.sh\"" "install_nvm_on_ubuntu"
         check_dep "node" "bash -c '. {{.NVM_SH}} && command -v node'" "install_node_on_ubuntu"
         check_dep "pnpm" "bash -c '. {{.NVM_SH}} && command -v pnpm'" "install_pnpm_on_ubuntu"
-
         if [ ${#missing_deps[@]} -gt 0 ]; then
           echo -e "${RED}Deps missing: ${BOLD}$(IFS=' '; echo "${missing_deps[*]}")"
           echo -e "${RESET}Please install with following commands:"
-          for cmd in "${install_commands[@]}"; do
-            echo -e "    ${GREEN}$cmd${RESET}"
-          done
+          for cmd in "${install_commands[@]}"; do echo -e "    ${GREEN}$cmd${RESET}"; done
           exit 1
         else
           echo -e "✅ All system dependencies are installed."
@@ -482,7 +423,7 @@ tasks:
 
   _install_tool:
     internal: true
-    desc: "Internal task to download and install a specified tool from a NuGet package."
+    desc: "Internal: Downloads and installs a specified tool from a NuGet package."
     vars:
       name: '{{.name}}'
       version: '{{.version}}'
