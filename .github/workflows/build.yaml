@@ -64,7 +64,7 @@ jobs:
       - name: Build
         run: |
           ./build.sh
-          mv ./tmp/dist embyhack
+          mv ./tmp/build/dist embyhack
 
       - name: Validate artifact
         run: test -d embyhack
