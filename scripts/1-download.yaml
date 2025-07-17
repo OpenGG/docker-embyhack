@@ -1,0 +1,32 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+
+tasks:
+  download:
+    desc: "Step 1: Download the Emby server Debian package."
+    vars:
+      PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
+
+    status:
+      - test -d {{.PATH_OUTPUT}}
+
+    cmds:
+      - echo download {{.PATH_OUTPUT}}
+
+      - echo "--- [Step 1] Downloading Emby ---"
+      # Clean up any previous staging directory
+      - rm -rf {{.PATH_STAGING}}
+      - mkdir -p {{.PATH_STAGING}}
+
+      # Download the Emby package to the staging directory
+      - curl -o "{{.PATH_STAGING}}/{{.EMBY_PACKAGE}}" -L --fail "{{.EMBY_DOWNLOAD_URL}}"
+
+      # Move the downloaded package from the staging directory to the final output directory
+      - |
+        mv "{{.PATH_STAGING}}" "{{.PATH_OUTPUT}}"
+
+      - echo "✅ Step 1 complete."

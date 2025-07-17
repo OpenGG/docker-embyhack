@@ -1,0 +1,202 @@
+version: '3'
+
+# silent: true
+
+includes:
+  shared: ./variables.yaml
+
+tasks:
+  # --- Utility Tasks for System Setup ---
+
+  install_on_ubuntu:
+    desc: "Installs all required system dependencies on a fresh Ubuntu system."
+    deps:
+      - install_yq_on_ubuntu
+      - install_rsync_on_ubuntu
+      - install_curl_on_ubuntu
+      - install_unzip_on_ubuntu
+      - install_dotnet_sdk_on_ubuntu
+      - install_nvm_on_ubuntu
+      - install_node_on_ubuntu
+      - install_pnpm_on_ubuntu
+    cmds:
+      - echo "--- All System Dependencies for Ubuntu are installed or checked ---"
+      - echo "✅ All dependencies installed successfully."
+      - echo "👉 Remember to restart your terminal or run '. ~/.nvm/nvm.sh' to use nvm, node, and pnpm interactively if you just installed nvm."
+
+  install_yq_on_ubuntu:
+    desc: "Installs yq (YAML processor) on Ubuntu if not present."
+    status:
+      - command -v yq
+    cmds:
+      - echo "--- Installing yq ---"
+      - sudo curl -L "https://github.com/mikefarah/yq/releases/download/v4.45.2/yq_linux_amd64" -o /usr/local/bin/yq
+      - sudo chmod +x /usr/local/bin/yq
+      - echo "✅ yq installed successfully."
+
+  install_rsync_on_ubuntu:
+    desc: "Installs rsync on Ubuntu if not present."
+    status:
+      - command -v rsync
+    cmds:
+      - echo "--- Installing rsync ---"
+      - sudo apt-get update
+      - sudo apt-get install -y rsync
+      - echo "✅ rsync installed successfully."
+
+  install_curl_on_ubuntu:
+    desc: "Installs curl on Ubuntu if not present."
+    status:
+      - command -v curl
+    cmds:
+      - echo "--- Installing curl ---"
+      - sudo apt-get update
+      - sudo apt-get install -y curl
+      - echo "✅ curl installed successfully."
+
+  install_unzip_on_ubuntu:
+    desc: "Installs unzip on Ubuntu if not present."
+    status:
+      - command -v unzip
+    cmds:
+      - echo "--- Installing unzip ---"
+      - sudo apt-get update
+      - sudo apt-get install -y unzip
+      - echo "✅ unzip installed successfully."
+
+  install_dotnet_sdk_on_ubuntu:
+    desc: "Installs .NET SDK 8.0 on Ubuntu if not present."
+    status:
+      - command -v dotnet && dotnet --list-sdks | grep "8.0."
+    cmds:
+      - echo "--- Installing .NET SDK 8.0 ---"
+      - sudo apt-get update
+      - sudo apt-get install -y dotnet-sdk-8.0
+      - echo "✅ .NET SDK 8.0 installed successfully."
+
+  install_nvm_on_ubuntu:
+    desc: "Installs Node Version Manager (nvm) on Ubuntu if not present."
+    status:
+      - test -f "{{.NVM_DIR}}/nvm.sh"
+    cmds:
+      - echo "--- Installing nvm ---"
+      - curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+      - echo "✅ nvm installed successfully."
+      - echo "👉 Please restart your terminal or run '. ~/.nvm/nvm.sh' to use nvm interactively."
+
+  install_node_on_ubuntu:
+    desc: "Installs Node.js v22 using nvm on Ubuntu if not present."
+    status:
+      - nvm list | grep "v22"
+    cmds:
+      - echo "--- Installing Node.js v22 ---"
+      - nvm install 22
+      - echo "✅ Node.js v22 installed successfully."
+
+  install_pnpm_on_ubuntu:
+    desc: "Ensures pnpm is installed globally via npm (which should be managed by nvm)."
+    status:
+      - npm list -g pnpm >/dev/null
+    cmds:
+      - echo "--- Installing pnpm ---"
+      - npm install -g pnpm
+      - echo "✅ pnpm installed successfully."
+
+  # --- Helper & Internal Tool Installation Tasks ---
+
+  install_ildasm:
+    desc: "Installs ildasm (IL Disassembler) if it is not already present."
+    status:
+      - test -f {{.PATH_BIN}}/ildasm
+    cmds:
+      - task: _install_tool
+        vars: {name: 'ildasm', version: '9.0.7', url: "https://www.nuget.org/api/v2/package/runtime.linux-x64.Microsoft.NETCore.ILDAsm/9.0.7"}
+
+  install_ilasm:
+    desc: "Installs ilasm (IL Assembler) if it is not already present."
+    status:
+      - test -f {{.PATH_BIN}}/ilasm
+    cmds:
+      - task: _install_tool
+        vars: {name: 'ilasm', version: '9.0.7', url: "https://www.nuget.org/api/v2/package/runtime.linux-x64.Microsoft.NETCore.ILAsm/9.0.7"}
+
+  _check_system_deps:
+    internal: true
+    desc: "Internal task to check for required system dependencies and guide installation."
+    status:
+      # Check for basic commands
+      - command -v dotnet >/dev/null 2>&1
+      - command -v rsync >/dev/null 2>&1
+      - command -v yq >/dev/null 2>&1
+      - command -v curl >/dev/null 2>&1
+      - command -v unzip >/dev/null 2>&1
+      # Check for nvm, node, and pnpm.
+      # For nvm, check for the script file as `command -v nvm` might not work if not sourced.
+      # For node and pnpm, check using 'command -v' and ensure they are available in PATH
+      - test -f "{{.NVM_DIR}}/nvm.sh" >/dev/null 2>&1
+      - bash -c '. {{.NVM_SH}} && command -v node >/dev/null 2>&1' # Ensure node is available via nvm sourcing
+      - bash -c '. {{.NVM_SH}} && command -v pnpm >/dev/null 2>&1' # Ensure pnpm is available via nvm sourcing
+    cmds:
+      - |
+        echo "Checking for system dependencies..."
+        RED='\033[31m'
+        GREEN='\033[32m'
+        BOLD='\033[1m'
+        RESET='\033[0m'
+
+        missing_deps=()
+        install_commands=()
+
+        # Function to check and add missing dependency
+        check_dep() {
+          local dep_name="$1"
+          local check_cmd="$2"
+          local install_task="$3"
+          if ! eval "$check_cmd" >/dev/null 2>&1; then
+            missing_deps+=("$dep_name")
+            install_commands+=("./build.sh deps:$install_task")
+          fi
+        }
+
+        # Check common build tools
+        check_dep "dotnet" "command -v dotnet" "install_dotnet_sdk_on_ubuntu"
+        check_dep "rsync" "command -v rsync" "install_rsync_on_ubuntu"
+        check_dep "yq" "command -v yq" "install_yq_on_ubuntu"
+        check_dep "curl" "command -v curl" "install_curl_on_ubuntu"
+        check_dep "unzip" "command -v unzip" "install_unzip_on_ubuntu"
+        # Check Node.js related tools via nvm
+        check_dep "nvm" "test -f \"{{.NVM_DIR}}/nvm.sh\"" "install_nvm_on_ubuntu"
+        check_dep "node" "bash -c '. {{.NVM_SH}} && command -v node'" "install_node_on_ubuntu"
+        check_dep "pnpm" "bash -c '. {{.NVM_SH}} && command -v pnpm'" "install_pnpm_on_ubuntu"
+
+        if [ ${#missing_deps[@]} -gt 0 ]; then
+          echo -e "${RED}Deps missing: ${BOLD}$(IFS=' '; echo "${missing_deps[*]}")"
+          echo -e "${RESET}Please install with following commands:"
+          for cmd in "${install_commands[@]}"; do
+            echo -e "    ${GREEN}$cmd${RESET}"
+          done
+          exit 1
+        else
+          echo -e "✅ All system dependencies are installed."
+        fi
+
+  _install_tool:
+    internal: true
+    desc: "Internal task to download and install a specified tool from a NuGet package."
+    vars:
+      name: '{{.name}}'
+      version: '{{.version}}'
+      url: '{{.url}}'
+    cmds:
+      - |
+        echo "Installing {{.name}}..."
+        mkdir -p {{.PATH_BIN}}
+        tool_tmp_dir="{{.PATH_BUILD_ROOT}}/{{.name}}.staging"
+        mkdir -p $tool_tmp_dir
+        cd $tool_tmp_dir
+        curl --silent -L "{{.url}}" -o "{{.name}}.zip"
+        unzip "{{.name}}.zip" -d "package_{{.name}}"
+        cp "package_{{.name}}/runtimes/linux-x64/native/{{.name}}" "{{.PATH_BIN}}/{{.name}}"
+        chmod +x "{{.PATH_BIN}}/{{.name}}"
+        rm -rf $tool_tmp_dir
+        echo "{{.name}} installed successfully."

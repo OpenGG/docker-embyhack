@@ -1,0 +1,29 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+  deps: ./deps.yaml
+
+tasks:
+  # --- Main Build Process Tasks ---
+
+  prepare:
+    desc: "Step 0: Prepare the build environment and check for necessary dependencies."
+    cmds:
+      - echo "--- [Step 0] Preparing Environment ---"
+
+      # cleanup
+      - rm -rf "{{.PATH_BUILD_ROOT}}/*.staging"
+
+      # check dependencies
+      - task: deps:install_ilasm
+      - task: deps:install_ildasm
+      - task: deps:_check_system_deps
+
+      # setup pnpm
+      - echo "Installing Node.js dependencies..."
+      - bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm install'
+
+      - echo "✅ Preparation complete."

@@ -1,0 +1,31 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+
+tasks:
+  unpack:
+    desc: "Step 2: Unpack the downloaded Emby server Debian package."
+    vars:
+      # Staging directory for the unpacking process
+      PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
+    status:
+      # Check if the final output directory exists to determine if the task needs to run
+      - echo {{.PATH_OUTPUT}}
+      - test -d {{.PATH_OUTPUT}}
+    cmds:
+      - echo "--- [Step 2] Unpacking Emby ---"
+      # Clean up any previous staging directory
+      - |
+        rm -rf {{.PATH_STAGING}}
+        mkdir {{.PATH_STAGING}}
+
+      # Unpack the Debian package into the staging directory
+      - dpkg-deb -R "{{.PATH_INPUT}}/{{.EMBY_PACKAGE}}" "{{.PATH_STAGING}}"
+
+      # Move the unpacked contents from the staging directory to the final output directory
+      - mv "{{.PATH_STAGING}}" "{{.PATH_OUTPUT}}"
+
+      - echo "✅ Step 2 complete."

@@ -1,0 +1,52 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+
+tasks:
+  build:
+    desc: "Step 5: Build the final package from modified and recompiled files."
+    vars:
+      # Staging directory for intermediate build steps
+      PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
+    status:
+      # Check if the final output directory exists to determine if the task needs to run
+      - test -d {{.PATH_OUTPUT}}
+    cmds:
+      - echo "--- [Step 5] Building Final Package ---"
+      # Clean up any previous staging directory
+      - |
+        rm -rf {{.PATH_STAGING}}
+
+        # Create the staging directory
+
+        mkdir -p {{.PATH_STAGING}}/system/
+        cd {{.PATH_STAGING}}
+
+        echo "Copying output template files..."
+        # Copy additional files from the output template
+
+        rsync -a {{.PATH_DIST_TEMPLATE}}/ {{.PATH_STAGING}}/
+
+        echo "Copying modified DLL and JS files..."
+        # Copy the recompiled DLLs and modified JS files over the original ones
+        {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/dll/" "{{.PATH_STAGING}}/system/"
+        {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/js/" "{{.PATH_STAGING}}/system/"
+
+        echo "Building and placing crypto.js..."
+        bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run build:crypto'
+        polyfil_path="{{.PATH_STAGING}}/system/dashboard-ui/modules/polyfills"
+        mkdir -p "$polyfil_path"
+        cp "{{.PATH_NODE}}/dist/crypto.js" "$polyfil_path/crypto.js"
+
+        echo "Updating docker-compose.yml with volume mappings for modified files..."
+        # Navigate to the staging directory and update docker-compose.yml to mount modified files
+        cd {{.PATH_STAGING}} && for file in $(find system -type f); do
+          file=$file yq e '.services.emby.volumes += ("./system/" + env(file) + ":/app/emby/" + env(file) + ":ro")' -i docker-compose.yml
+        done
+
+      # Move the completed staging directory to the final output directory
+      - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
+      - echo "✅ Step 5 complete."

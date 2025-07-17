@@ -1,0 +1,50 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+
+tasks:
+  decompile:
+    desc: "Step 3: Stash original files (JS and DLLs) and decompile DLLs into IL."
+    vars:
+      PATH_SYSTEM: "opt/emby-server/system"
+
+      # Staging directory for intermediate stashing and decompilation steps
+      PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
+      PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
+      PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
+      PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
+    status:
+      # Check if the final output directory exists to determine if the task needs to run
+      - test -d {{.PATH_OUTPUT}}
+    cmds:
+      - echo "--- [Step 3] Stashing Originals and Decompiling DLLs ---"
+      # Clean up any previous staging directory
+      - rm -rf {{.PATH_STAGING}}
+
+      - |
+        # Create staging directories for decompiled IL, stashed JS, and stashed DLLs
+        mkdir -p {{.PATH_STAGING_JS}}
+        echo "Stashing original JavaScript files..."
+        # Iterate through target JS files and copy them to the staging area
+        for js_file in {{.EMBY_TARGET_JS}}; do
+          mkdir -p "{{.PATH_STAGING_JS}}/$(dirname $js_file)"
+          cp "{{.PATH_INPUT}}/{{.PATH_SYSTEM}}/$js_file" "{{.PATH_STAGING_JS}}/$js_file"
+        done
+
+      - |
+        echo "Stashing original DLLs and decompiling them into Intermediate Language (IL)..."
+        # Iterate through target DLL files, copy them to staging, and then decompile them
+        mkdir -p {{.PATH_STAGING_DLL}}
+        for dll_file in {{.EMBY_TARGET_DLL}}; do
+          cp "{{.PATH_INPUT}}/{{.PATH_SYSTEM}}/$dll_file" "{{.PATH_STAGING_DLL}}/"
+          base_name=${dll_file%.dll}
+          mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
+          {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
+        done
+
+      # Move the completed staging directory to the final output directory
+      - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
+      - echo "✅ Step 3 complete."
