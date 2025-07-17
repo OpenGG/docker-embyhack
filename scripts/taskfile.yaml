@@ -343,19 +343,19 @@ tasks:
   install_node_on_ubuntu:
     desc: "Installs Node.js v22 using nvm on Ubuntu if not present."
     status:
-      - nvm list | grep "v22"
+      - bash -c '. {{.NVM_SH}} && nvm list | grep "v22"'
     cmds:
       - echo "--- Installing Node.js v22 ---"
-      - nvm install 22
+      - bash -c '. {{.NVM_SH}} && nvm install 22'
       - echo "✅ Node.js v22 installed successfully."
 
   install_pnpm_on_ubuntu:
     desc: "Ensures pnpm is installed globally via npm (which should be managed by nvm)."
     status:
-      - npm list -g pnpm >/dev/null
+      - bash -c '. {{.NVM_SH}} && npm list -g pnpm >/dev/null'
     cmds:
       - echo "--- Installing pnpm ---"
-      - npm install -g pnpm
+      - bash -c '. {{.NVM_SH}} && npm install -g pnpm'
       - echo "✅ pnpm installed successfully."
 
   # --- Helper & Internal Tool Installation Tasks ---
