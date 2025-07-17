@@ -21,9 +21,9 @@ export const validateConfig = () => {
         throw new Error('EMBY_TARGET_URL environment variable must be set and not empty');
     }
     if (!config.replacementUrl) {
-        throw new Error('REPLACEMENT_URL environment variable must be set');
+        throw new Error('EMBY_REPLACEMENT_URL environment variable must be set');
     }
     if (!config.replacementUrl.startsWith('http') || !config.replacementUrl.endsWith('/')) {
-        throw new Error('REPLACEMENT_URL must start with "https" and end with "/"');
+        throw new Error('EMBY_REPLACEMENT_URL must start with "https" and end with "/"');
     }
 }
