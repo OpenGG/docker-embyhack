@@ -10,7 +10,7 @@
 
 此方法适合希望立即体验的用户，但公共验证服务器不保证稳定。
 
-1.  **下载 Release**：从 [Releases 页面](https://github.com/fejich/docker-embyhack/releases) 下载最新的 `docker-embyhack.zip` 文件。
+1.  **下载 Release**：从 [Releases 页面](https://github.com/OpenGG/docker-embyhack/releases) 下载最新的 `docker-embyhack.zip` 文件。
 2.  **解压文件**：解压后，您会得到 `docker-compose.yml` 文件和一个 `system/` 文件夹。
 3.  **修改配置**：修改 `docker-compose.yml` 文件，主要是映射您的媒体库路径。
 4.  **启动服务**：在文件所在目录，运行 `docker-compose up -d` 命令，即可启动 Emby 服务。
