@@ -25,7 +25,7 @@ vars:
   PATH_STEP_ALT_DOTNET_EDIT: "{{.PATH_BUILD_ROOT}}/4-alt-dotnet-edit"
   PATH_DIST: "{{.PATH_BUILD_ROOT}}/dist"
 
-  PATH_EMBY_SYSTEM: "opt/emby-server/system"
+  PATH_EMBY_SYSTEM: "{{.PATH_STEP_UNPACK}}/opt/emby-server/system"
 
   PATH_STRING_REPLACER: "{{.PATH_BIN}}/StringReplacer"
   COMMAND_COMPILE_DLL: "{{.PATH_BIN}}/ilasm -quiet -dll "

@@ -15,7 +15,6 @@ tasks:
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
       PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
       PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
-      PATH_SEARCH_DLL: "{{.PATH_SEARCH_DLL}}"
     status:
       # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
@@ -39,7 +38,7 @@ tasks:
               --match-pattern "${TARGET_URL// /|}" \
               --replace-regex "{{.EMBY_REPLACE_PATTERN}}" \
               --replace-content "{{.EMBY_REPLACEMENT_URL}}" \
-              --resolve-dir "{{.PATH_SEARCH_DLL}}"
+              --resolve-dir "{{.PATH_EMBY_SYSTEM}}"
 
           if [ -f "{{.PATH_STAGING_DLL}}/$base_name.patched.dll" ]; then
             mv "{{.PATH_STAGING_DLL}}/$base_name.patched.dll" "{{.PATH_STAGING_DLL}}/$dll_file"
@@ -49,7 +48,6 @@ tasks:
           mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
           {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
         done
-        exit 1
 
       - |
         echo "Editing JS files to apply modifications..."

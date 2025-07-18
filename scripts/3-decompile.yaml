@@ -9,7 +9,6 @@ tasks:
   decompile:
     desc: "Step 3: Stash original files (JS and DLLs) and decompile DLLs into IL."
     vars:
-      PATH_INPUT: "{{.PATH_INPUT}}"
       PATH_OUTPUT: "{{.PATH_OUTPUT}}"
 
       # Staging directory for intermediate stashing and decompilation steps
@@ -32,7 +31,7 @@ tasks:
         # Iterate through target JS files and copy them to the staging area
         for js_file in {{.EMBY_TARGET_JS}}; do
           mkdir -p "{{.PATH_STAGING_JS}}/$(dirname $js_file)"
-          cp "{{.PATH_INPUT}}/{{.PATH_EMBY_SYSTEM}}/$js_file" "{{.PATH_STAGING_JS}}/$js_file"
+          cp "{{.PATH_EMBY_SYSTEM}}/$js_file" "{{.PATH_STAGING_JS}}/$js_file"
         done
 
       - |
@@ -40,7 +39,7 @@ tasks:
         # Iterate through target DLL files, copy them to staging, and then decompile them
         mkdir -p {{.PATH_STAGING_DLL}}
         for dll_file in {{.EMBY_TARGET_DLL}}; do
-          cp "{{.PATH_INPUT}}/{{.PATH_EMBY_SYSTEM}}/$dll_file" "{{.PATH_STAGING_DLL}}/"
+          cp "{{.PATH_EMBY_SYSTEM}}/$dll_file" "{{.PATH_STAGING_DLL}}/"
           base_name=${dll_file%.dll}
           mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
           {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
