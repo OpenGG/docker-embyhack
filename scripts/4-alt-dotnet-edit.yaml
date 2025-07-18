@@ -15,6 +15,7 @@ tasks:
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
       PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
       PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
+      PATH_SEARCH_DLL: "{{.PATH_SEARCH_DLL}}"
     status:
       # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
@@ -37,7 +38,12 @@ tasks:
               "{{.PATH_STAGING_DLL}}/$dll_file" \
               --match-pattern "${TARGET_URL// /|}" \
               --replace-regex "{{.EMBY_REPLACE_PATTERN}}" \
-              --replace-content "{{.EMBY_REPLACEMENT_URL}}"
+              --replace-content "{{.EMBY_REPLACEMENT_URL}}" \
+              --resolve-dir "{{.PATH_SEARCH_DLL}}"
+
+          if [ -f "{{.PATH_STAGING_DLL}}/$base_name.patched.dll" ]; then
+            mv "{{.PATH_STAGING_DLL}}/$base_name.patched.dll" "{{.PATH_STAGING_DLL}}/$dll_file"
+          fi
 
           # for debug only
           mkdir -p "{{.PATH_STAGING_IL}}/$base_name"

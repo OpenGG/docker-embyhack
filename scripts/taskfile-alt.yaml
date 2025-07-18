@@ -36,6 +36,7 @@ includes:
     vars:
       PATH_INPUT: "{{.PATH_STEP_ALT_DOTNET_CP}}"
       PATH_OUTPUT: "{{.PATH_STEP_ALT_DOTNET_EDIT}}"
+      PATH_SEARCH_DLL: "{{.PATH_STEP_UNPACK}}/{{.PATH_EMBY_SYSTEM}}"
   build:
     internal: true
     taskfile: ./5-build.yaml

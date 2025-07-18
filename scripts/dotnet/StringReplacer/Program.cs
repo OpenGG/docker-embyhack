@@ -54,26 +54,33 @@ public class StringReplacer
             Required = true
         };
 
+        Option<string> resolveDirOption = new("--resolve-dir")
+        {
+            Description = "The resolve dir string.",
+            Required = false
+        };
+
         RootCommand rootCommand = new("Finds and replaces strings in .NET assembly IL and embedded JS resources.");
         rootCommand.Arguments.Add(fileArgument);
         rootCommand.Options.Add(matchOption);
         rootCommand.Options.Add(replaceRegexOption);
         rootCommand.Options.Add(replaceContentOption);
+        rootCommand.Options.Add(resolveDirOption);
 
         rootCommand.SetAction((parsedResult) =>
-            RunPatcher(parsedResult.GetValue(fileArgument)!, parsedResult.GetValue(matchOption)!, parsedResult.GetValue(replaceRegexOption)!, parsedResult.GetValue(replaceContentOption)!)
+            RunPatcher(parsedResult.GetValue(fileArgument)!, parsedResult.GetValue(matchOption)!, parsedResult.GetValue(replaceRegexOption)!, parsedResult.GetValue(replaceContentOption)!, parsedResult.GetValue(resolveDirOption)!)
         );
 
         return rootCommand.Parse(args).Invoke();
     }
 
     // The core logic of the application, now separate from argument parsing.
-    private static void RunPatcher(FileInfo assemblyPath, string matchPattern, string replaceRegex, string replaceContent)
+    private static int RunPatcher(FileInfo assemblyPath, string matchPattern, string replaceRegex, string replaceContent, string resolveDir)
     {
         if (!assemblyPath.Exists)
         {
             Console.WriteLine($"Error: Input file not found at '{assemblyPath.FullName}'");
-            return;
+            throw new FileNotFoundException("Input file not found.", assemblyPath.FullName);
         }
 
         string patchedAssemblyPath = Path.ChangeExtension(assemblyPath.FullName, ".patched.dll");
@@ -84,15 +91,19 @@ public class StringReplacer
 
         try
         {
-            var readerParameters = new ReaderParameters { ReadSymbols = false };
+            var resolver = new DefaultAssemblyResolver();
+            resolver.AddSearchDirectory(string.IsNullOrEmpty(resolveDir) ? assemblyPath.DirectoryName ?? "." : resolveDir);
+            var readerParameters = new ReaderParameters { ReadSymbols = false, AssemblyResolver = resolver };
             var writerParameters = new WriterParameters { WriteSymbols = false };
+
 
             using var assembly = AssemblyDefinition.ReadAssembly(assemblyPath.FullName, readerParameters);
 
             int ilReplacementCount = PatchIlStrings(assembly, matchPattern, replaceRegex, replaceContent);
             int resourceReplacementCount = PatchEmbeddedResources(assembly, matchPattern, replaceRegex, replaceContent);
+            int literalFieldReplacementCount = PatchLiteralStringFields(assembly, matchPattern, replaceRegex, replaceContent);
 
-            int totalReplacements = ilReplacementCount + resourceReplacementCount;
+            int totalReplacements = ilReplacementCount + resourceReplacementCount + literalFieldReplacementCount;
             if (totalReplacements > 0)
             {
                 Console.WriteLine($"\nFound and replaced {ilReplacementCount} IL string(s) and modified {resourceReplacementCount} resource(s).");
@@ -103,14 +114,17 @@ public class StringReplacer
             {
                 Console.WriteLine("\nNo matching strings or resources found to replace.");
             }
+            return 0;
         }
         catch (BadImageFormatException)
         {
             Console.WriteLine($"Error: The file '{assemblyPath.FullName}' is not a valid .NET assembly.");
+            throw;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            throw;
         }
     }
 
@@ -174,6 +188,34 @@ public class StringReplacer
                 var newResource = new EmbeddedResource(resource.Name, resource.Attributes, Encoding.UTF8.GetBytes(newContent));
                 assembly.MainModule.Resources[assembly.MainModule.Resources.IndexOf(resource)] = newResource;
                 replacementCount++;
+            }
+        }
+        return replacementCount;
+    }
+
+    // In your StringReplacer class (e.g., after PatchEmbeddedResources)
+    private static int PatchLiteralStringFields(AssemblyDefinition assembly, string matchPattern, string replaceRegex, string replaceContent)
+    {
+        Console.WriteLine("\nScanning static literal string fields...");
+        int replacementCount = 0;
+        foreach (var module in assembly.Modules)
+        {
+            foreach (var type in module.GetTypes())
+            {
+                foreach (var field in type.Fields)
+                {
+                    if (field.IsLiteral && field.IsStatic && field.Constant is string originalConstantString)
+                    {
+                        Console.WriteLine($"  - Checking literal field '{field.FullName}': '{originalConstantString}'");
+                        (bool replaced, string newString) = PerformReplacement(originalConstantString, matchPattern, replaceRegex, replaceContent);
+                        if (replaced)
+                        {
+                            field.Constant = newString; // <--- This is the key line to modify the constant value!
+                            Console.WriteLine($"  - Replaced literal field '{field.FullName}': '{originalConstantString}' -> '{newString}'");
+                            replacementCount++;
+                        }
+                    }
+                }
             }
         }
         return replacementCount;
