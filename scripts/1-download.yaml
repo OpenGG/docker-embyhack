@@ -9,6 +9,7 @@ tasks:
   download:
     desc: "Step 1: Download the Emby server Debian package."
     vars:
+      PATH_OUTPUT: "{{.PATH_OUTPUT}}"
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
 
     status:

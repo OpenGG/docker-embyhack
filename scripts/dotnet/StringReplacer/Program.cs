@@ -132,7 +132,7 @@ public class StringReplacer
                         if (instruction.OpCode != OpCodes.Ldstr) continue;
 
                         string originalString = (string)instruction.Operand;
-                        Console.WriteLine($"  - Checking IL string: '{originalString}' with pattern '{matchPattern}'");
+                        Console.WriteLine($"  - Checking IL string: '{originalString}'");
                         (bool replaced, string newString) = PerformReplacement(originalString, matchPattern, replaceRegex, replaceContent);
                         if (replaced)
                         {
@@ -197,7 +197,7 @@ public class StringReplacer
             {
                 wasReplaced = true;
             }
-            
+
             return replacedSegment;
         });
 

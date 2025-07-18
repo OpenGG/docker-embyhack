@@ -1,0 +1,79 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables:
+    internal: true
+    taskfile: ./variables.yaml
+  deps:
+    taskfile: ./deps.yaml
+  prepare:
+    internal: true
+    taskfile: ./0-prepare.yaml
+  download:
+    internal: true
+    taskfile: ./1-download.yaml
+    vars:
+      PATH_OUTPUT: "{{.PATH_STEP_DOWNLOAD}}"
+  unpack:
+    internal: true
+    taskfile: ./2-unpack.yaml
+    vars:
+      # Input path to the downloaded Emby Debian package
+      PATH_INPUT: "{{.PATH_STEP_DOWNLOAD}}"
+      # Output directory for the unpacked files
+      PATH_OUTPUT: "{{.PATH_STEP_UNPACK}}"
+  decompile:
+    internal: true
+    taskfile: ./3-alt-dotnet-cp.yaml
+    vars:
+      PATH_INPUT: "{{.PATH_STEP_UNPACK}}"
+      PATH_OUTPUT: "{{.PATH_STEP_ALT_DOTNET_CP}}"
+  edit:
+    internal: true
+    taskfile: ./4-alt-dotnet-edit.yaml
+    vars:
+      PATH_INPUT: "{{.PATH_STEP_ALT_DOTNET_CP}}"
+      PATH_OUTPUT: "{{.PATH_STEP_ALT_DOTNET_EDIT}}"
+  build:
+    internal: true
+    taskfile: ./5-build.yaml
+    vars:
+      PATH_INPUT: "{{.PATH_STEP_ALT_DOTNET_EDIT}}"
+      PATH_OUTPUT: "{{.PATH_STEP_BUILD}}"
+
+tasks:
+  # --- Main Build Process Tasks ---
+
+  default:
+    desc: "Runs the entire build process from start to finish."
+    cmds:
+      - task: all
+
+  all:
+    internal: true
+    desc: "Alias for the 'build' task, runs all steps in order."
+    cmds:
+      - task: prepare:prepare
+      - task: download:download
+      - task: unpack:unpack
+      - task: decompile:decompile
+      - task: edit:edit
+      - task: build:build
+      - task: dist
+      - |
+        echo "✅ Build process completed successfully!"
+        echo "The final output package is in: {{.PATH_DIST}}"
+
+  dist:
+    internal: true
+    desc: "Make distribution package."
+    vars:
+      PATH_INPUT: "{{.PATH_STEP_BUILD}}"
+      # Output directory for the final built package
+      PATH_OUTPUT: "{{.PATH_DIST}}"
+    cmds:
+      - |
+        rm -rf "{{.PATH_OUTPUT}}"
+        {{.COMMAND_COPY_RECURSIVE}} "{{.PATH_INPUT}}/" "{{.PATH_OUTPUT}}/"

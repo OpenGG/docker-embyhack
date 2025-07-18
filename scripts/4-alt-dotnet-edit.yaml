@@ -1,0 +1,61 @@
+version: '3'
+
+# silent: true
+
+includes:
+  variables: ./variables.yaml
+
+tasks:
+  edit:
+    desc: "Step 4: Edit DLL files and JavaScript"
+    vars:
+      PATH_INPUT: "{{.PATH_INPUT}}"
+      PATH_OUTPUT: "{{.PATH_OUTPUT}}"
+      PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
+      PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
+      PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
+      PATH_STAGING_JS: "{{.PATH_STAGING}}/js"
+    status:
+      # Check if the final output directory exists to determine if the task needs to run
+      - test -d {{.PATH_OUTPUT}}
+    cmds:
+      - echo "--- [Step 4] Editing Files ---"
+
+      - |
+          rm -rf {{.PATH_STAGING}}
+
+          echo "Copying original JS files to staging area for editing..."
+          {{.COMMAND_COPY_RECURSIVE}} {{.PATH_INPUT}}/ {{.PATH_STAGING}}/
+
+      - |
+        echo "Editting DLL files..."
+        TARGET_URL="{{.EMBY_TARGET_URL}}"
+        for dll_file in {{.EMBY_TARGET_DLL}}; do
+          echo "Recompiling $dll_file..."
+          base_name=${dll_file%.dll}
+          "{{.PATH_STRING_REPLACER}}" \
+              "{{.PATH_STAGING_DLL}}/$dll_file" \
+              --match-pattern "${TARGET_URL// /|}" \
+              --replace-regex "{{.EMBY_REPLACE_PATTERN}}" \
+              --replace-content "{{.EMBY_REPLACEMENT_URL}}"
+
+          # for debug only
+          mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
+          {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
+        done
+        exit 1
+
+      - |
+        echo "Editing JS files to apply modifications..."
+        # Iterate through all JS files in the staging directory and edit them
+        target_js_files=$(find {{.PATH_STAGING_JS}} -type f -name "*.js")
+        for target_file in $target_js_files; do
+          echo "Editing $target_file..."
+          bash -c '. {{.NVM_SH}} && cd {{.PATH_NODE}} && pnpm run edit "$0" "$1"' "$target_file" "$target_file.EDIT"
+          # If an edited version is created, replace the original JS file
+          if [ -f "$target_file.EDIT" ]; then mv "$target_file.EDIT" "$target_file"; fi
+        done
+
+      # Move the completed staging directory to the final output directory
+      - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
+      - echo "✅ Step 4 complete."

@@ -9,6 +9,8 @@ tasks:
   edit:
     desc: "Step 4: Edit decompiled IL files and JavaScript, then recompile DLLs."
     vars:
+      PATH_INPUT: "{{.PATH_INPUT}}"
+      PATH_OUTPUT: "{{.PATH_OUTPUT}}"
       # Staging directory for intermediate editing and recompilation steps
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"

@@ -6,7 +6,7 @@ set -euo pipefail
 
 mkdir -p tmp
 
-task_file=$(realpath ./scripts/taskfile.yaml)
+task_file=$(realpath ./scripts/taskfile-alt.yaml)
 tmp_dir=$(realpath ./tmp)
 
 task -t "$task_file" -d "$tmp_dir" "$@"

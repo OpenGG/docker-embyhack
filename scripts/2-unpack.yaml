@@ -9,6 +9,8 @@ tasks:
   unpack:
     desc: "Step 2: Unpack the downloaded Emby server Debian package."
     vars:
+      PATH_INPUT: "{{.PATH_INPUT}}"
+      PATH_OUTPUT: "{{.PATH_OUTPUT}}"
       # Staging directory for the unpacking process
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
     status:

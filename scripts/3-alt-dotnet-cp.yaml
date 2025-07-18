@@ -7,13 +7,13 @@ includes:
 
 tasks:
   decompile:
-    desc: "Step 3: Stash original files (JS and DLLs) and decompile DLLs into IL."
+    desc: "Step 3: Stash original files (JS and DLLs)."
     vars:
       PATH_INPUT: "{{.PATH_INPUT}}"
       PATH_OUTPUT: "{{.PATH_OUTPUT}}"
       PATH_SYSTEM: "opt/emby-server/system"
 
-      # Staging directory for intermediate stashing and decompilation steps
+      # Staging directory for intermediate stashing
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
       PATH_STAGING_DLL: "{{.PATH_STAGING}}/dll"
       PATH_STAGING_IL: "{{.PATH_STAGING}}/il"
@@ -22,12 +22,12 @@ tasks:
       # Check if the final output directory exists to determine if the task needs to run
       - test -d {{.PATH_OUTPUT}}
     cmds:
-      - echo "--- [Step 3] Stashing Originals and Decompiling DLLs ---"
+      - echo "--- [Step 3] Stashing Originals DLLs ---"
       # Clean up any previous staging directory
       - rm -rf {{.PATH_STAGING}}
 
       - |
-        # Create staging directories for decompiled IL, stashed JS, and stashed DLLs
+        # Create staging directories for stashed JS
         mkdir -p {{.PATH_STAGING_JS}}
         echo "Stashing original JavaScript files..."
         # Iterate through target JS files and copy them to the staging area
@@ -37,12 +37,14 @@ tasks:
         done
 
       - |
-        echo "Stashing original DLLs and decompiling them into Intermediate Language (IL)..."
-        # Iterate through target DLL files, copy them to staging, and then decompile them
+        echo "Stashing original DLLs..."
+        # Iterate through target DLL files, copy them to staging
         mkdir -p {{.PATH_STAGING_DLL}}
         for dll_file in {{.EMBY_TARGET_DLL}}; do
           cp "{{.PATH_INPUT}}/{{.PATH_SYSTEM}}/$dll_file" "{{.PATH_STAGING_DLL}}/"
+
           base_name=${dll_file%.dll}
+          # for debug only
           mkdir -p "{{.PATH_STAGING_IL}}/$base_name"
           {{.COMMAND_DECOMPILE_DLL}} -out="{{.PATH_STAGING_IL}}/$base_name/$base_name.il" "{{.PATH_STAGING_DLL}}/$dll_file"
         done

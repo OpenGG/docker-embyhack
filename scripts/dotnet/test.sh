@@ -13,7 +13,7 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 # --- Tool Paths ---
 REPLACER_PATH="$SCRIPT_DIR/StringReplacer/bin/Release/net8.0/linux-x64/StringReplacer"
-ILDASM_PATH="$SCRIPT_DIR/../../bin/ildasm" # Adjust if necessary
+ILDASM_PATH="$SCRIPT_DIR/../../tmp/bin/ildasm" # Adjust if necessary
 TEST_APP_SRC_DLL="$SCRIPT_DIR/TestApp/bin/Release/net8.0/linux-x64/TestApp.dll"
 
 # --- Test Parameters ---
@@ -55,7 +55,7 @@ fail() {
 # Sets up the testing environment.
 setup() {
     log "Setting up test environment in '$TEST_DIR'..."
-    
+
     # Ensure the build script has been run
     "$SCRIPT_DIR/build.sh"
 
@@ -65,11 +65,11 @@ setup() {
     #         fail "Build script failed."
     #     fi
     # fi
-    
+
     # Clean up previous test runs
     rm -rf "$TEST_DIR"
     mkdir -p "$TEST_DIR"
-    
+
     # Copy the test application
     cp "$TEST_APP_SRC_DLL" "$TEST_APP_DLL"
     chmod +x "$REPLACER_PATH"
@@ -79,13 +79,13 @@ setup() {
 # Runs the StringReplacer tool.
 run_patcher() {
     log "Running StringReplacer on '$TEST_APP_DLL'..."
-    
+
     "$REPLACER_PATH" \
       "$TEST_APP_DLL" \
       --match-pattern "$MATCH_PATTERN" \
       --replace-regex "$REPLACE_REGEX" \
       --replace-content "$REPLACE_CONTENT"
-      
+
     if [ ! -f "$PATCHED_APP_DLL" ]; then
         fail "Patcher did not create the output file: '$PATCHED_APP_DLL'"
     fi
@@ -95,17 +95,17 @@ run_patcher() {
 # Verifies the patched assembly by decompiling it and checking the content.
 verify_patch() {
     log "Verifying patched assembly..."
-    
+
     local il_output_dir="$TEST_DIR/TestApp.patched.il.output"
     mkdir -p "$il_output_dir"
-    
+
     local il_file="$il_output_dir/TestApp.patched.il"
-    
+
     # Decompile the patched DLL. The output IL file contains both the
     # IL code and a representation of the embedded resources.
     log "Decompiling '$PATCHED_APP_DLL' to '$il_file'..."
     "$ILDASM_PATH" "$PATCHED_APP_DLL" -all -typelist -metadata=raw -out="$il_file"
-    
+
     # --- Verify IL Replacements ---
     # Count occurrences in 'ldstr' (load string) instructions.
     local il_count
@@ -142,7 +142,7 @@ main() {
     setup
     run_patcher
     verify_patch
-    
+
     echo -e "\n${GREEN}✅ Test passed successfully!${NC}"
 }
 

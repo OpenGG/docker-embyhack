@@ -5,6 +5,7 @@ version: '3'
 includes:
   variables: ./variables.yaml
   deps: ./deps.yaml
+  dotnet: ./dotnet.yaml
 
 tasks:
   # --- Main Build Process Tasks ---
@@ -21,6 +22,7 @@ tasks:
       - task: deps:install_ilasm
       - task: deps:install_ildasm
       - task: deps:_check_system_deps
+      - task: dotnet:dotnet
 
       # setup pnpm
       - echo "Installing Node.js dependencies..."

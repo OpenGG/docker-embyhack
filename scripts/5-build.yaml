@@ -9,6 +9,8 @@ tasks:
   build:
     desc: "Step 5: Build the final package from modified and recompiled files."
     vars:
+      PATH_INPUT: "{{.PATH_INPUT}}"
+      PATH_OUTPUT: "{{.PATH_OUTPUT}}"
       # Staging directory for intermediate build steps
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
     status:
