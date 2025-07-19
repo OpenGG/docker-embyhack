@@ -33,6 +33,10 @@
 3.  保存并部署该 Worker，得到一个专属的 URL。 请**务必在 URL 末尾加上斜杠 `/`**，最终格式为 `https://your-worker.workers.dev/`。
 4. （可选）如果 `workers.dev` 域名在你的区域不可用，可以在 Worker 后台绑定自定义域名。
 
+其他本地部署方案（适用于内网环境）：
+* Nginx 配置示例: [mocks/nginx.conf](./mocks/nginx.conf)
+* Caddy 配置示例: [mocks/Caddyfile](./mocks/Caddyfile)
+
 #### 步骤 2：通过 GitHub Actions 自定义构建
 
 1.  **Fork 本仓库**：点击页面右上角的 "Fork" 按钮，将此项目复制到您自己的 GitHub 账户下。

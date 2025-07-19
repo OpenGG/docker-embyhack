@@ -1,0 +1,100 @@
+# How to use this Caddyfile configuration:
+# 1. Save this content to a file named 'Caddyfile' (no extension).
+# 2. Place this Caddyfile in the directory where you plan to run Caddy.
+# 3. Ensure Caddy is installed.
+# 4. Run Caddy from the directory containing the Caddyfile: caddy start
+#    (or caddy run for foreground execution, useful for debugging).
+# 5. Access the endpoints via http://localhost:8080/path
+
+# Caddyfile configuration for the mocking server
+:8080 { # Listen on port 8080, change if needed
+    # Global CORS headers
+    header {
+        Access-Control-Allow-Origin *
+        Access-Control-Allow-Headers *
+        Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+        Access-Control-Allow-Credentials true
+    }
+
+    # Handle OPTIONS preflight requests
+    handle_path /admin/service/registration/validateDevice /admin/service/registration/validate /admin/service/registration/getStatus /admin/service/appstore/register /emby/Plugins/SecurityInfo {
+        @options {
+            method OPTIONS
+        }
+        respond @options 204 {
+            header Access-Control-Max-Age 1728000
+        }
+    }
+
+    # Configuration for /admin/service/registration/validateDevice
+    route /admin/service/registration/validateDevice {
+        respond 200 {
+            body `{
+                "cacheExpirationDays": 3650,
+                "message": "Device Valid",
+                "resultCode": "GOOD"
+            }`
+            header Content-Type application/json
+        }
+    }
+
+    # Configuration for /admin/service/registration/validate
+    route /admin/service/registration/validate {
+        respond 200 {
+            body `{
+                "featId": "",
+                "registered": true,
+                "expDate": "2099-01-01",
+                "key": ""
+            }`
+            header Content-Type application/json
+        }
+    }
+
+    # Configuration for /admin/service/registration/getStatus
+    route /admin/service/registration/getStatus {
+        respond 200 {
+            body `{
+                "deviceStatus": "",
+                "planType": "Lifetime",
+                "subscriptions": {}
+            }`
+            header Content-Type application/json
+        }
+    }
+
+    # Configuration for /admin/service/appstore/register
+    route /admin/service/appstore/register {
+        respond 200 {
+            body `{
+                "featId": "",
+                "registered": true,
+                "expDate": "2099-01-01",
+                "key": ""
+            }`
+            header Content-Type application/json
+        }
+    }
+
+    # Configuration for /emby/Plugins/SecurityInfo
+    route /emby/Plugins/SecurityInfo {
+        respond 200 {
+            body `{
+                "SupporterKey": "",
+                "IsMBSupporter": true
+            }`
+            header Content-Type application/json
+        }
+    }
+
+    # Default fallback for unmatched paths (404 Not Found)
+    route {
+        respond 404 {
+            body `{
+                "resultCode": "ERROR",
+                "message": "Endpoint not found for path: {http.request.uri.path}"
+            }`
+            header Content-Type application/json
+        }
+    }
+}
