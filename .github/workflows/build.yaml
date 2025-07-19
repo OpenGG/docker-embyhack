@@ -35,10 +35,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Start debug session (when enabled)
-        if: ${{ inputs.remote_debug }}
-        uses: lhotari/action-upterm@v1
-
       - uses: pnpm/action-setup@v4
         name: Install pnpm
         with:
@@ -62,10 +58,9 @@ jobs:
           npm --version
           pnpm --version
 
-      # - name: Maintain debug session (when enabled)
-      #   run: |
-      #     sleep 3600
-      #   if: ${{ inputs.remote_debug }}
+      - name: Start debug session (when enabled)
+        if: ${{ inputs.remote_debug }}
+        uses: lhotari/action-upterm@v1
 
       - name: Verify environment os
         run: |
@@ -128,11 +123,6 @@ jobs:
       - name: Start debug session (when enabled)
         if: ${{ inputs.remote_debug }}
         uses: lhotari/action-upterm@v1
-
-      # - name: Maintain debug session (when enabled)
-      #   run: |
-      #     sleep 3600
-      #   if: ${{ inputs.remote_debug }}
 
       - name: Create and push tag
         run: |
