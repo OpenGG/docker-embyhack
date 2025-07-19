@@ -100,6 +100,7 @@ verify_patch() {
     mkdir -p "$il_output_dir"
 
     local il_file="$il_output_dir/TestApp.patched.il"
+    local js_file="$il_output_dir/TestApp.resources.test.js"
 
     # Decompile the patched DLL. The output IL file contains both the
     # IL code and a representation of the embedded resources.
@@ -110,7 +111,7 @@ verify_patch() {
     # Count occurrences in 'ldstr' (load string) instructions.
     local il_count
     il_count=$(grep 'https://b.com/' "$il_file" | grep -c "$REPLACE_CONTENT" || true)
-    log "Found $il_count IL replacements. (Expected: $EXPECTED_IL_REPLACEMENTS)"
+    log "Found $il_count IL replacements in $il_file. (Expected: $EXPECTED_IL_REPLACEMENTS)"
     if [ "$il_count" -ne "$EXPECTED_IL_REPLACEMENTS" ]; then
         fail "IL verification failed. Expected $EXPECTED_IL_REPLACEMENTS replacements, but found $il_count."
     fi
@@ -118,8 +119,8 @@ verify_patch() {
     # --- Verify Resource Replacements ---
     # Count occurrences in the text representation of resources, which ildasm typically renders as comments.
     local resource_count
-    resource_count=$(grep 'https://b.com/' "$il_file" | grep -c "$REPLACE_CONTENT" || true)
-    log "Found $resource_count resource replacements. (Expected: $EXPECTED_RESOURCE_REPLACEMENTS)"
+    resource_count=$(grep 'https://b.com/' "$js_file" | grep -c "$REPLACE_CONTENT" || true)
+    log "Found $resource_count resource replacements in $js_file. (Expected: $EXPECTED_RESOURCE_REPLACEMENTS)"
     if [ "$resource_count" -ne "$EXPECTED_RESOURCE_REPLACEMENTS" ]; then
         fail "Resource verification failed. Expected $EXPECTED_RESOURCE_REPLACEMENTS replacements, but found $resource_count."
     fi
