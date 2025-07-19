@@ -116,7 +116,7 @@ jobs:
           Branch: ${{ github.ref_name }}
           Commit: ${{ github.sha }}
           Build Date: ${{ steps.date.outputs.NOW }}
-          Emby Version: ${{ inputs.emby_version }}"
+          Emby Version: ${{ inputs.emby_version }}
           EOF
 
           cat Release.txt > Release_body.txt
