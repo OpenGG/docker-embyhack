@@ -2,7 +2,7 @@
 
 通过简单的 `docker-compose` 命令，快速搭建并激活您自己的 Emby 服务器。
 
-> **小提醒**：如果您的经济条件允许，请购买 Emby Premiere 来支持开发者。
+> **小提醒**：如果您的经济条件允许，请购买 [Emby Premiere](https://emby.media/premiere.html) 来支持开发者。
 
 ![working](working.jpg)
 
