@@ -101,6 +101,8 @@ jobs:
       - name: Download artifact
         id: download-artifact
         uses: dawidd6/action-download-artifact@v11
+        with:
+          skip_unpack: true
 
       - name: Get current date and time
         id: date
