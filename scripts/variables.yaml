@@ -1,12 +1,13 @@
+# Taskfile.yaml
 version: '3'
 
-# silent: true
-
-
-# --- Configuration Variables ---
+# -----------------------------------------------------------------------------
+# Configuration Variables
 # These variables define important root paths and general settings for the build process.
-# You can override these from the command line, e.g., `task -v EMBY_VERSION=...`
+# They are primarily for internal Taskfile use and can be overridden via `task -v VAR=...`.
+# -----------------------------------------------------------------------------
 vars:
+  # Temporary directory for build artifacts
   PATH_TMP:
     sh: realpath "{{.TASKFILE_DIR}}/../tmp"
   PATH_BIN: "{{.PATH_TMP}}/bin"
@@ -14,7 +15,8 @@ vars:
   PATH_DOTNET: "{{.TASKFILE_DIR}}/dotnet"
   PATH_DIST_TEMPLATE: "{{.TASKFILE_DIR}}/dist-template"
   PATH_BUILD_ROOT: "{{.PATH_TMP}}/build"
-  # Define base step paths, these are then specialized as input/output/staging within tasks
+
+  # Define base step paths for the build pipeline
   PATH_DEP_DOTNET: "{{.PATH_BUILD_ROOT}}/0-deps-dotnet"
   PATH_STEP_DOWNLOAD: "{{.PATH_BUILD_ROOT}}/1-download"
   PATH_STEP_UNPACK: "{{.PATH_BUILD_ROOT}}/2-unpack"
@@ -23,24 +25,53 @@ vars:
   PATH_STEP_BUILD: "{{.PATH_BUILD_ROOT}}/5-build"
   PATH_DIST: "{{.PATH_BUILD_ROOT}}/dist"
 
+  # Specific paths within the unpacked Emby structure
   PATH_EMBY_SYSTEM: "{{.PATH_STEP_UNPACK}}/opt/emby-server/system"
 
+  # Paths to utility commands
   PATH_STRING_REPLACER: "{{.PATH_BIN}}/StringReplacer"
+
+  # Command definitions for reusability
   COMMAND_DECOMPILE_DLL: "{{.PATH_BIN}}/ildasm -all -typelist -metadata=raw "
   COMMAND_COPY_RECURSIVE: "rsync -av -q "
 
-# --- Environment Variables ---
-# These variables are exposed as environment variables to the shell commands executed by tasks.
+# -----------------------------------------------------------------------------
+# Environment Variables
+# These variables are exposed as environment variables to all shell commands
+# executed by tasks. They support default values using shell parameter expansion.
+# -----------------------------------------------------------------------------
 env:
-  EMBY_VERSION: "4.8.11.0"
-  EMBY_REPLACEMENT_URL: "https://example.com/"
+  # Emby Server version to target. Override with `EMBY_VERSION=... task ...`
+  EMBY_VERSION:
+    sh: 'echo ${EMBY_VERSION:-4.8.11.0}'
+
+  # URL to replace Emby's validation services with.
+  EMBY_REPLACEMENT_URL:
+    sh: 'echo ${EMBY_REPLACEMENT_URL:-https://example.com/}'
+
+  # Derived Emby package name and download URL based on EMBY_VERSION.
   EMBY_PACKAGE: "emby-server-deb_{{.EMBY_VERSION}}_amd64.deb"
   EMBY_DOWNLOAD_URL: "https://github.com/MediaBrowser/Emby.Releases/releases/download/{{.EMBY_VERSION}}/{{.EMBY_PACKAGE}}"
-  EMBY_TARGET_DLL: "Emby.Server.Implementations.dll Emby.Web.dll"
-  EMBY_TARGET_JS: "dashboard-ui/embypremiere/embypremiere.js dashboard-ui/modules/emby-apiclient/connectionmanager.js"
-  EMBY_TARGET_URL: "https://mb3admin.com/admin/service/registration/validateDevice https://mb3admin.com/admin/service/registration/validate https://mb3admin.com/admin/service/appstore/register https://mb3admin.com/admin/service/registration/getStatus"
-  EMBY_REPLACE_PATTERN: "https://mb3admin.com/"
-  NVM_DIR:
-    sh: '[[ -n "$NVM_DIR" ]] && echo "$NVM_DIR" || echo "{{.HOME}}/.nvm"'
 
+  # Space-separated list of DLLs to decompile/modify.
+  EMBY_TARGET_DLL:
+    sh: 'echo ${EMBY_TARGET_DLL:-"Emby.Server.Implementations.dll Emby.Web.dll"}'
+
+  # Space-separated list of JavaScript files to modify.
+  EMBY_TARGET_JS:
+    sh: 'echo ${EMBY_TARGET_JS:-"dashboard-ui/embypremiere/embypremiere.js dashboard-ui/modules/emby-apiclient/connectionmanager.js"}'
+
+  # Space-separated list of URLs to be replaced within target files.
+  EMBY_TARGET_URL:
+    sh: 'echo ${EMBY_TARGET_URL:-"https://mb3admin.com/admin/service/registration/validateDevice https://mb3admin.com/admin/service/registration/validate https://mb3admin.com/admin/service/appstore/register https://mb3admin.com/admin/service/registration/getStatus"}'
+
+  # The pattern to search for and replace in target files.
+  EMBY_REPLACE_PATTERN:
+    sh: 'echo ${EMBY_REPLACE_PATTERN:-"https://mb3admin.com/"}'
+
+  # NVM directory for Node.js version management. Defaults to ~/.nvm.
+  NVM_DIR:
+    sh: '[[ -n "$NVM_DIR" ]] && echo "$NVM_DIR" || echo "${HOME}/.nvm"' # Use $HOME for consistency
+
+  # Path to the NVM initialization script.
   NVM_SH: "{{.NVM_DIR}}/nvm.sh"

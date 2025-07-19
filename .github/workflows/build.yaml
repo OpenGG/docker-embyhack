@@ -2,12 +2,12 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      emby_version:
+      EMBY_VERSION:
         description: "The Emby server version for this release (e.g., 4.8.11.0)."
         type: string
         required: true
         default: 4.8.11.0
-      your_mb3admin_replacement_url:
+      EMBY_REPLACEMENT_URL:
         description: >-
           URL for Emby's server replacement. Must starts with 'http' and end with a '/'.
         type: string
@@ -29,8 +29,8 @@ jobs:
   build: # This job will now handle both build and conditional release
     runs-on: ubuntu-latest
     env:
-      EMBY_REPLACEMENT_URL: ${{ inputs.your_mb3admin_replacement_url }}
-      EMBY_VERSION: ${{ inputs.emby_version }}
+      EMBY_REPLACEMENT_URL: ${{ inputs.EMBY_REPLACEMENT_URL }}
+      EMBY_VERSION: ${{ inputs.EMBY_VERSION }}
     permissions: # Permissions needed for creating releases and tags in this job
       contents: write
 
