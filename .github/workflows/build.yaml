@@ -98,12 +98,9 @@ jobs:
         with:
           fetch-depth: 0 # Fetch all history for tag creation
 
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-
-      - name: Start debug session (when enabled)
-        if: ${{ inputs.remote_debug }}
-        uses: lhotari/action-upterm@v1
+      - name: Download artifact
+        id: download-artifact
+        uses: dawidd6/action-download-artifact@v11
 
       - name: Get current date and time
         id: date
@@ -122,6 +119,10 @@ jobs:
             Commit: ${{ github.sha }} \
             Build Date: ${{ steps.date.outputs.NOW }} \
             Emby Version: ${{ inputs.emby_version }}" > Release.txt
+
+      - name: Start debug session (when enabled)
+        if: ${{ inputs.remote_debug }}
+        uses: lhotari/action-upterm@v1
 
       # - name: Maintain debug session (when enabled)
       #   run: |
