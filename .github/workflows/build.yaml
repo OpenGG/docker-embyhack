@@ -69,7 +69,7 @@ jobs:
 
       - name: Verify environment os
         run: |
-          ./build.sh prepare
+          ./build.sh prepare:prepare
 
       - name: Build
         run: |
