@@ -67,7 +67,7 @@ jobs:
         if: ${{ inputs.remote_debug }}
         uses: lhotari/action-upterm@v1
 
-      - name: Verify environment os
+      - name: Prepare Build Environment (via build.sh) # IMP-010: Renamed for clarity
         run: |
           ./build.sh prepare:prepare
 
@@ -102,12 +102,15 @@ jobs:
         run: |
           PRERELEASE_SUFFIX=""
           if [[ "${{ github.ref_name }}" != "main" ]]; then
-            PRERELEASE_SUFFIX="-prerelease"
+            PRERELEASE_SUFFIX="-alpha"
           fi
-          TAG_NAME="v${{ inputs.emby_version }}$PRERELEASE_SUFFIX-${{ steps.date.outputs.NOW }}"
+
+          TAG_NAME="v${{ inputs.emby_version }}$PRERELEASE_SUFFIX+${{ steps.date.outputs.NOW }}"
           RELEASE_NAME="Release $TAG_NAME"
+
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+
           cat <<EOF > Release.txt
           Automated release from GitHub Actions.
           Branch: ${{ github.ref_name }}
@@ -123,6 +126,8 @@ jobs:
         if: ${{ inputs.remote_debug }}
         run: |
           file_to_wait="./continue_debug"
+          # IMP-009: Improved clarity for the user
+          echo "Debug session started. To continue the workflow, create an empty file named '$file_to_wait' in the runner's workspace."
           echo "Waiting for $file_to_wait to be created..."
 
           while [ ! -f "$file_to_wait" ]; do
@@ -151,6 +156,6 @@ jobs:
           prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
           files: |
             Release.txt
-            docker-embyhack.zip # Attach the newly created zipped file from the same runner
+            docker-embyhack.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
