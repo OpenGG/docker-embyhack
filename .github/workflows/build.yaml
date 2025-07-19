@@ -104,7 +104,7 @@ jobs:
           if [[ "${{ github.ref_name }}" != "main" ]]; then
             PRERELEASE_SUFFIX="-prerelease"
           fi
-          TAG_NAME="v${{ inputs.emby_version }}${{ PRERELEASE_SUFFIX }}-${{ steps.date.outputs.NOW }}"
+          TAG_NAME="v${{ inputs.emby_version }}$PRERELEASE_SUFFIX-${{ steps.date.outputs.NOW }}"
           RELEASE_NAME="Release $TAG_NAME"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
