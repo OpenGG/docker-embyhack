@@ -49,6 +49,17 @@ tasks:
           file=$file yq e '.services.emby.volumes += ("./" + env(file) + ":/app/emby/" + env(file) + ":ro")' -i docker-compose.yml
         done
 
+        # Validate EMBY_VERSION format
+        BASE_VERSION=$(echo "{{.EMBY_VERSION}}" | sed -E -n 's/^([0-9]+\.[0-9]+\.[0-9]+).*/\1/p')
+
+        if [[ -n "$BASE_VERSION" ]]; then
+          echo "Valid EMBY_VERSION: {{.EMBY_VERSION}}, extracted base version: $BASE_VERSION"
+          # Use yq to update the image tag with the extracted base version
+          yq e '.services.emby.image |= sub(":[0-9.]+$", ":'$BASE_VERSION'")' -i docker-compose.yml
+        else
+          echo "EMBY_VERSION is invalid ({{.EMBY_VERSION}}). Skipping yq update."
+        fi
+
       # Move the completed staging directory to the final output directory
       - mv {{.PATH_STAGING}} {{.PATH_OUTPUT}}
       - echo "✅ Step 5 complete."

@@ -1,7 +1,10 @@
 version: "2.1"
 services:
   emby:
+    # 如果你不用 linuxserver 的 emby 镜像
+    # 下面 volumes 的 dll/js 文件映射路径也要改变
     image: linuxserver/emby:4.8.11
+
     container_name: emby
     environment:
        # 你的 pid and gid
