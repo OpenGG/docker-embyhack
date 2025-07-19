@@ -153,6 +153,6 @@ jobs:
           prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
           files: |
             Release.txt
-            docker-embyhack/* # Attach all files from the downloaded artifact directory
+            docker-embyhack.zip # Attach all files from the downloaded artifact directory
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
