@@ -18,8 +18,8 @@ vars:
   PATH_DEP_DOTNET: "{{.PATH_BUILD_ROOT}}/0-deps-dotnet"
   PATH_STEP_DOWNLOAD: "{{.PATH_BUILD_ROOT}}/1-download"
   PATH_STEP_UNPACK: "{{.PATH_BUILD_ROOT}}/2-unpack"
-  PATH_STEP_DOTNET_CP: "{{.PATH_BUILD_ROOT}}/3-dotnet-cp"
-  PATH_STEP_DOTNET_EDIT: "{{.PATH_BUILD_ROOT}}/4-dotnet-edit"
+  PATH_STEP_STASH: "{{.PATH_BUILD_ROOT}}/3-stash"
+  PATH_STEP_EDIT: "{{.PATH_BUILD_ROOT}}/4-edit"
   PATH_STEP_BUILD: "{{.PATH_BUILD_ROOT}}/5-build"
   PATH_DIST: "{{.PATH_BUILD_ROOT}}/dist"
 

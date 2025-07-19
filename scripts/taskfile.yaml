@@ -24,23 +24,23 @@ includes:
       PATH_INPUT: "{{.PATH_STEP_DOWNLOAD}}"
       # Output directory for the unpacked files
       PATH_OUTPUT: "{{.PATH_STEP_UNPACK}}"
-  decompile:
+  stash:
     internal: true
-    taskfile: ./3-dotnet-cp.yaml
+    taskfile: ./3-stash.yaml
     vars:
       PATH_INPUT: "{{.PATH_STEP_UNPACK}}"
-      PATH_OUTPUT: "{{.PATH_STEP_DOTNET_CP}}"
+      PATH_OUTPUT: "{{.PATH_STEP_STASH}}"
   edit:
     internal: true
-    taskfile: ./4-dotnet-edit.yaml
+    taskfile: ./4-edit.yaml
     vars:
-      PATH_INPUT: "{{.PATH_STEP_DOTNET_CP}}"
-      PATH_OUTPUT: "{{.PATH_STEP_DOTNET_EDIT}}"
+      PATH_INPUT: "{{.PATH_STEP_STASH}}"
+      PATH_OUTPUT: "{{.PATH_STEP_EDIT}}"
   build:
     internal: true
     taskfile: ./5-build.yaml
     vars:
-      PATH_INPUT: "{{.PATH_STEP_DOTNET_EDIT}}"
+      PATH_INPUT: "{{.PATH_STEP_EDIT}}"
       PATH_OUTPUT: "{{.PATH_STEP_BUILD}}"
 
 tasks:
@@ -58,7 +58,7 @@ tasks:
       - task: prepare:prepare
       - task: download:download
       - task: unpack:unpack
-      - task: decompile:decompile
+      - task: stash:stash
       - task: edit:edit
       - task: build:build
       - task: dist

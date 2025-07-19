@@ -6,7 +6,7 @@ includes:
   variables: ./variables.yaml
 
 tasks:
-  decompile:
+  stash:
     desc: "Step 3: Stash original files (JS and DLLs)."
     vars:
       PATH_OUTPUT: "{{.PATH_OUTPUT}}"
