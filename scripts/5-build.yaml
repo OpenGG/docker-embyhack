@@ -46,7 +46,7 @@ tasks:
         echo "Updating docker-compose.yml with volume mappings for modified files..."
         # Navigate to the staging directory and update docker-compose.yml to mount modified files
         for file in $(find system -type f); do
-          file=$file yq e '.services.emby.volumes += ("./system/" + env(file) + ":/app/emby/" + env(file) + ":ro")' -i docker-compose.yml
+          file=$file yq e '.services.emby.volumes += ("./" + env(file) + ":/app/emby/" + env(file) + ":ro")' -i docker-compose.yml
         done
 
       # Move the completed staging directory to the final output directory
