@@ -15,7 +15,6 @@ tasks:
       PATH_STAGING: "{{.PATH_OUTPUT}}.staging"
     status:
       # Check if the final output directory exists to determine if the task needs to run
-      - echo {{.PATH_OUTPUT}}
       - test -d {{.PATH_OUTPUT}}
     cmds:
       - echo "--- [Step 2] Unpacking Emby ---"

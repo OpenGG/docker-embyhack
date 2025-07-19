@@ -96,10 +96,10 @@ tasks:
   install_pnpm_on_ubuntu:
     desc: "Ensures pnpm is installed globally via npm (which should be managed by nvm)."
     status:
-      - npm list -g pnpm >/dev/null
+      - bash -c '. {{.NVM_SH}} && npm list -g pnpm >/dev/null'
     cmds:
       - echo "--- Installing pnpm ---"
-      - npm install -g pnpm
+      - bash -c '. {{.NVM_SH}} && npm install -g pnpm'
       - echo "✅ pnpm installed successfully."
 
   # --- Helper & Internal Tool Installation Tasks ---

@@ -31,7 +31,7 @@ tasks:
         echo "Editting DLL files..."
         TARGET_URL="{{.EMBY_TARGET_URL}}"
         for dll_file in {{.EMBY_TARGET_DLL}}; do
-          echo "Recompiling $dll_file..."
+          echo "Replacing strings in $dll_file..."
           base_name=${dll_file%.dll}
           "{{.PATH_STRING_REPLACER}}" \
               "{{.PATH_STAGING_DLL}}/$dll_file" \
