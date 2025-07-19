@@ -109,9 +109,12 @@ jobs:
       - name: Determine tag name
         id: set_tag
         run: |
-          # Use emby_version + date/time for the tag name
-          TAG_NAME="v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
-          RELEASE_NAME="Release v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
+          PRERELEASE_SUFFIX=""
+          if [[ "${{ github.ref_name }}" != "main" ]]; then
+            PRERELEASE_SUFFIX="-prerelease"
+          fi
+          TAG_NAME="v${{ inputs.emby_version }}${{ PRERELEASE_SUFFIX }}-${{ steps.date.outputs.NOW }}"
+          RELEASE_NAME="Release v${{ inputs.emby_version }}${{ PRERELEASE_SUFFIX }}-${{ steps.date.outputs.NOW }}"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "Automated release from GitHub Actions. \
