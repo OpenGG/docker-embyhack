@@ -62,10 +62,10 @@ jobs:
           npm --version
           pnpm --version
 
-      - name: Maintain debug session (when enabled)
-        run: |
-          sleep 3600
-        if: ${{ inputs.remote_debug }}
+      # - name: Maintain debug session (when enabled)
+      #   run: |
+      #     sleep 3600
+      #   if: ${{ inputs.remote_debug }}
 
       - name: Verify environment os
         run: |
@@ -118,10 +118,10 @@ jobs:
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
 
-      - name: Maintain debug session (when enabled)
-        run: |
-          sleep 3600
-        if: ${{ inputs.remote_debug }}
+      # - name: Maintain debug session (when enabled)
+      #   run: |
+      #     sleep 3600
+      #   if: ${{ inputs.remote_debug }}
 
       - name: Create and push tag
         run: |
