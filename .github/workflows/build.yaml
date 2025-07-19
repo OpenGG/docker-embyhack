@@ -13,12 +13,12 @@ on:
         type: string
         required: true
         default: https://mb3admin.megm.workers.dev/
-      # remote_debug:
-      #   description: >-
-      #     Starts an SSH session to debug the runner. For advanced troubleshooting only.
-      #   type: boolean
-      #   required: false
-      #   default: false
+      remote_debug:
+        description: >-
+          Starts an SSH session to debug the runner. For advanced troubleshooting only.
+        type: boolean
+        required: false
+        default: false
       publish: # New input for publishing
         description: "Publish to GitHub Release and create a tag (as a draft first)"
         type: boolean
@@ -101,9 +101,13 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
 
+      - name: Start debug session (when enabled)
+        if: ${{ inputs.remote_debug }}
+        uses: lhotari/action-upterm@v1
+
       - name: Get current date and time
         id: date
-        run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> Release.txt
+        run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Determine tag name
         id: set_tag
@@ -111,8 +115,13 @@ jobs:
           # Use emby_version + date/time for the tag name
           TAG_NAME="v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
           RELEASE_NAME="Release v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
-          echo "TAG_NAME=$TAG_NAME" >> Release.txt
-          echo "RELEASE_NAME=$RELEASE_NAME" >> Release.txt
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Maintain debug session (when enabled)
+        run: |
+          sleep 3600
+        if: ${{ inputs.remote_debug }}
 
       - name: Create and push tag
         run: |
