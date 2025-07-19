@@ -2,6 +2,11 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      emby_version:
+        description: "The Emby server version for this release (e.g., 4.8.11.0)."
+        type: string
+        required: true
+        default: 4.8.11.0
       your_mb3admin_replacement_url:
         description: >-
           URL for Emby's server replacement. Must starts with 'http' and end with a '/'.
@@ -14,13 +19,18 @@ on:
       #   type: boolean
       #   required: false
       #   default: false
+      publish: # New input for publishing
+        description: "Publish to GitHub Release and create a tag (as a draft first)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
       EMBY_REPLACEMENT_URL: ${{ inputs.your_mb3admin_replacement_url }}
-
+      EMBY_VERSION: ${{ inputs.emby_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -74,3 +84,62 @@ jobs:
         with:
           name: docker-embyhack
           path: embyhack
+
+  release: # New job for publishing the release
+    needs: build # This job depends on the 'build' job completing successfully
+    runs-on: ubuntu-latest
+    if: ${{ inputs.publish }} # Only run this job if the 'publish' input is true
+    permissions:
+      contents: write # Grant write permission to create releases and tags
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for tag creation
+
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-embyhack # Name of the artifact to download
+          path: embyhack # Path where the artifact will be downloaded
+
+      - name: Get current date and time
+        id: date
+        run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Determine tag name
+        id: set_tag
+        run: |
+          # Use emby_version + date/time for the tag name
+          TAG_NAME="v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
+          RELEASE_NAME="Release v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.set_tag.outputs.TAG_NAME }}
+          git push origin ${{ steps.set_tag.outputs.TAG_NAME }}
+
+      - name: Create GitHub Release (as Draft)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.set_tag.outputs.TAG_NAME }}
+          name: ${{ steps.set_tag.outputs.RELEASE_NAME }}
+          body: |
+            Automated release from GitHub Actions.
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Build Date: ${{ steps.date.outputs.NOW }}
+            Emby Version: ${{ inputs.emby_version }}
+
+            **This is a DRAFT release. Please verify the artifact before publishing.**
+          draft: true # Set to true to create a draft release for manual verification
+          prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
+          files: |
+            embyhack/* # Attach all files from the downloaded artifact directory
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
