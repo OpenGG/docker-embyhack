@@ -30,7 +30,7 @@
 
 1.  登录您的 Cloudflare 账户，进入 "Workers & Pages" 并创建一个新的 Worker。
 2.  将本项目 [mocks/worker.js](./mocks/worker.js) 文件中的代码**完整复制**到 Worker 中。
-3.  保存并部署该 Worker，得到一个专属的 URL。 请**务必在 URL 末尾加上斜杠 `/`**，最终格式为 `https://your-worker.your-name.workers.dev/`。
+3.  保存并部署该 Worker，得到一个专属的 URL。 请**务必在 URL 末尾加上斜杠 `/`**，最终格式为 `https://your-worker.workers.dev/`。
 4. （可选）如果 `workers.dev` 域名在你的区域不可用，可以在 Worker 后台绑定自定义域名。
 
 #### 步骤 2：通过 GitHub Actions 自定义构建
