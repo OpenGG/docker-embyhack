@@ -117,6 +117,11 @@ jobs:
           RELEASE_NAME="Release v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          echo "Automated release from GitHub Actions. \
+            Branch: ${{ github.ref_name }} \
+            Commit: ${{ github.sha }} \
+            Build Date: ${{ steps.date.outputs.NOW }} \
+            Emby Version: ${{ inputs.emby_version }}" > Release.txt
 
       # - name: Maintain debug session (when enabled)
       #   run: |
@@ -147,6 +152,6 @@ jobs:
           prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
           files: |
             Release.txt
-            docker-embyhack.zip # Attach all files from the downloaded artifact directory
+            docker-embyhack/* # Attach all files from the downloaded artifact directory
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
