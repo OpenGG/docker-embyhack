@@ -108,13 +108,29 @@ jobs:
           RELEASE_NAME="Release $TAG_NAME"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
-          echo "Automated release from GitHub Actions. \
-            Branch: ${{ github.ref_name }} \
-            Commit: ${{ github.sha }} \
-            Build Date: ${{ steps.date.outputs.NOW }} \
-            Emby Version: ${{ inputs.emby_version }}" > Release.txt
+          cat <<EOF > Release.txt
+          Automated release from GitHub Actions.
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          Build Date: ${{ steps.date.outputs.NOW }}
+          Emby Version: ${{ inputs.emby_version }}"
+          EOF
+
           cat Release.txt > Release_body.txt
           echo "**This is a DRAFT release. Please verify the artifact before publishing.**" >> Release_body.txt
+
+      - name: Wait until continue
+        if: ${{ inputs.remote_debug }}
+        run: |
+          file_to_wait="./continue_debug"
+          echo "Waiting for $file_to_wait to be created..."
+
+          while [ ! -f "$file_to_wait" ]; do
+            sleep 5 # Check every 5 seconds
+            echo "Still waiting for $file_to_wait..."
+          done
+
+          echo "$file_to_wait has been created. Proceeding with operations."
 
       - name: Create and push tag
         if: ${{ inputs.publish }} # Only run if publishing
