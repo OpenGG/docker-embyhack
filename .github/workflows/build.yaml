@@ -100,13 +100,10 @@ jobs:
 
       - name: Download Artifact
         uses: actions/download-artifact@v4
-        with:
-          name: docker-embyhack # Name of the artifact to download
-          path: embyhack # Path where the artifact will be downloaded
 
       - name: Get current date and time
         id: date
-        run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+        run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> Release.txt
 
       - name: Determine tag name
         id: set_tag
@@ -114,8 +111,8 @@ jobs:
           # Use emby_version + date/time for the tag name
           TAG_NAME="v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
           RELEASE_NAME="Release v${{ inputs.emby_version }}-${{ steps.date.outputs.NOW }}"
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=$TAG_NAME" >> Release.txt
+          echo "RELEASE_NAME=$RELEASE_NAME" >> Release.txt
 
       - name: Create and push tag
         run: |
@@ -140,6 +137,7 @@ jobs:
           draft: true # Set to true to create a draft release for manual verification
           prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
           files: |
-            embyhack/* # Attach all files from the downloaded artifact directory
+            Release.txt
+            docker-embyhack.zip # Attach all files from the downloaded artifact directory
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
