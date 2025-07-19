@@ -26,14 +26,19 @@ on:
         default: false
 
 jobs:
-  build:
+  build: # This job will now handle both build and conditional release
     runs-on: ubuntu-latest
     env:
       EMBY_REPLACEMENT_URL: ${{ inputs.your_mb3admin_replacement_url }}
       EMBY_VERSION: ${{ inputs.emby_version }}
+    permissions: # Permissions needed for creating releases and tags in this job
+      contents: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        # with:
+        #   fetch-depth: 0 # Fetch all history for tag creation, needed for git tag
 
       - uses: pnpm/action-setup@v4
         name: Install pnpm
@@ -80,37 +85,26 @@ jobs:
           name: docker-embyhack
           path: embyhack
 
-  release: # New job for publishing the release
-    needs: build # This job depends on the 'build' job completing successfully
-    runs-on: ubuntu-latest
-    if: ${{ inputs.publish }} # Only run this job if the 'publish' input is true
-    permissions:
-      contents: write # Grant write permission to create releases and tags
+      # --- Release steps, now conditional and within the 'build' job ---
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetch all history for tag creation
-
-      - name: Download artifact
-        id: download-artifact
-        uses: dawidd6/action-download-artifact@v11
-        with:
-          skip_unpack: true
+      - name: Create zip archive for release
+        run: zip -r docker-embyhack.zip embyhack
+        if: ${{ inputs.publish }} # Only run if publishing
 
       - name: Get current date and time
         id: date
+        if: ${{ inputs.publish }} # Only run if publishing
         run: echo "NOW=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
 
       - name: Determine tag name
         id: set_tag
+        if: ${{ inputs.publish }} # Only run if publishing
         run: |
           PRERELEASE_SUFFIX=""
           if [[ "${{ github.ref_name }}" != "main" ]]; then
             PRERELEASE_SUFFIX="-prerelease"
           fi
-          TAG_NAME="v${{ inputs.emby_version }}$PRERELEASE_SUFFIX-${{ steps.date.outputs.NOW }}"
+          TAG_NAME="v${{ inputs.emby_version }}${{ PRERELEASE_SUFFIX }}-${{ steps.date.outputs.NOW }}"
           RELEASE_NAME="Release $TAG_NAME"
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
           echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_OUTPUT
@@ -119,12 +113,11 @@ jobs:
             Commit: ${{ github.sha }} \
             Build Date: ${{ steps.date.outputs.NOW }} \
             Emby Version: ${{ inputs.emby_version }}" > Release.txt
-
-      - name: Start debug session (when enabled)
-        if: ${{ inputs.remote_debug }}
-        uses: lhotari/action-upterm@v1
+          cat Release.txt > Release_body.txt
+          echo "**This is a DRAFT release. Please verify the artifact before publishing.**" >> Release_body.txt
 
       - name: Create and push tag
+        if: ${{ inputs.publish }} # Only run if publishing
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -132,22 +125,16 @@ jobs:
           git push origin ${{ steps.set_tag.outputs.TAG_NAME }}
 
       - name: Create GitHub Release (as Draft)
+        if: ${{ inputs.publish }} # Only run if publishing
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.set_tag.outputs.TAG_NAME }}
           name: ${{ steps.set_tag.outputs.RELEASE_NAME }}
-          body: |
-            Automated release from GitHub Actions.
-            Branch: ${{ github.ref_name }}
-            Commit: ${{ github.sha }}
-            Build Date: ${{ steps.date.outputs.NOW }}
-            Emby Version: ${{ inputs.emby_version }}
-
-            **This is a DRAFT release. Please verify the artifact before publishing.**
+          body_path: Release_body.txt
           draft: true # Set to true to create a draft release for manual verification
           prerelease: ${{ github.ref_name != 'main' }} # Mark as prerelease if not on main branch
           files: |
             Release.txt
-            docker-embyhack.zip
+            docker-embyhack.zip # Attach the newly created zipped file from the same runner
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided by GitHub Actions
