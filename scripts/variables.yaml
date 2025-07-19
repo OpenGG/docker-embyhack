@@ -18,17 +18,14 @@ vars:
   PATH_DEP_DOTNET: "{{.PATH_BUILD_ROOT}}/0-deps-dotnet"
   PATH_STEP_DOWNLOAD: "{{.PATH_BUILD_ROOT}}/1-download"
   PATH_STEP_UNPACK: "{{.PATH_BUILD_ROOT}}/2-unpack"
-  PATH_STEP_DECOMPILE: "{{.PATH_BUILD_ROOT}}/3-decompile"
-  PATH_STEP_EDIT: "{{.PATH_BUILD_ROOT}}/4-edit"
+  PATH_STEP_DOTNET_CP: "{{.PATH_BUILD_ROOT}}/3-dotnet-cp"
+  PATH_STEP_DOTNET_EDIT: "{{.PATH_BUILD_ROOT}}/4-dotnet-edit"
   PATH_STEP_BUILD: "{{.PATH_BUILD_ROOT}}/5-build"
-  PATH_STEP_ALT_DOTNET_CP: "{{.PATH_BUILD_ROOT}}/3-alt-dotnet-cp"
-  PATH_STEP_ALT_DOTNET_EDIT: "{{.PATH_BUILD_ROOT}}/4-alt-dotnet-edit"
   PATH_DIST: "{{.PATH_BUILD_ROOT}}/dist"
 
   PATH_EMBY_SYSTEM: "{{.PATH_STEP_UNPACK}}/opt/emby-server/system"
 
   PATH_STRING_REPLACER: "{{.PATH_BIN}}/StringReplacer"
-  COMMAND_COMPILE_DLL: "{{.PATH_BIN}}/ilasm -quiet -dll "
   COMMAND_DECOMPILE_DLL: "{{.PATH_BIN}}/ildasm -all -typelist -metadata=raw "
   COMMAND_COPY_RECURSIVE: "rsync -av -q "
 

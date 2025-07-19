@@ -3,7 +3,6 @@
     "scripts": {
         "build:crypto": "tsx build-crypto.ts",
         "edit": "tsx src/edit.ts",
-        "preprocess-il": "tsx src/preprocess-il.ts",
         "test": "tsx src/il/*.test.ts"
     },
     "devDependencies": {

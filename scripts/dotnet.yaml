@@ -22,7 +22,6 @@ tasks:
         mkdir -p "{{.PATH_DEP_DOTNET_STAGING}}"
 
       - task: dotnet-build
-      - task: dotnet-test
       - cp "{{.PATH_DEP_DOTNET_STRING_REPLACER}}" "{{.PATH_STRING_REPLACER}}"
       - echo "✅ .NET step complete."
 
@@ -35,27 +34,8 @@ tasks:
         echo "--- Building .NET Projects ---"
         cd "{{.PATH_DOTNET}}"
 
-        projects=(
-          "TestApp"
-          "StringReplacer"
-        )
-        for project in "${projects[@]}"; do
-            if [ ! -d "$project" ]; then
-                echo "Project directory $project does not exist."
-                exit 1
-            fi
-            rm -rf "$project/bin" "$project/obj"
-            if [[ "StringReplacer" == "$project" ]]; then
-              dotnet publish "$project" \
-                --configuration Release \
-                --runtime linux-x64 \
-                -p:PublishSingleFile=true \
-                -p:IncludeNativeLibrariesForSelfExtract=true \
-                --self-contained=true
-            else
-              dotnet build "$project" --configuration Release --runtime linux-x64
-            fi
-        done
+        ./test.sh
+        ./build.sh
 
         test -f "{{.PATH_DEP_DOTNET_STRING_REPLACER}}" || { echo "StringReplacer build failed."; exit 1; }
         test -f "{{.PATH_DEP_DOTNET_TEST_DLL}}" || { echo "TestApp build failed."; exit 1; }
@@ -63,106 +43,3 @@ tasks:
         chmod +x "{{.PATH_DEP_DOTNET_STRING_REPLACER}}"
 
         echo "✅ .NET Build complete."
-
-  dotnet-test:
-    desc: "Runs tests for the .NET projects, including patching and verification."
-    cmds:
-      - |
-        set -euo pipefail
-        echo "--- Running .NET Tests ---"
-
-        # --- Test Parameters ---
-        TEST_DIR="{{.PATH_DEP_DOTNET_STAGING}}"
-        TEST_APP_DLL="$TEST_DIR/TestApp.dll"
-        PATCHED_APP_DLL="$TEST_DIR/TestApp.patched.dll"
-        REPLACER_PATH="$TEST_DIR/StringReplacer"
-
-        # --- Verification ---
-        EXPECTED_IL_REPLACEMENTS=2
-        EXPECTED_RESOURCE_REPLACEMENTS=2
-
-        # --- Replacement Patterns ---
-        MATCH_PATTERN="https://a.com/users/123/profile|https://a.com/system/info/long/url/long/enough/to/trigger/linebreak"
-        REPLACE_REGEX="https://a.com/"
-        REPLACE_CONTENT="https://b.com/"
-
-        # --- Colors for Logging ---
-        GREEN='\033[0;32m'
-        RED='\033[0;31m'
-        YELLOW='\033[1;33m'
-        NC='\033[0m' # No Color
-
-        # ==============================================================================
-        # HELPER FUNCTIONS (now defined within the task's command block)
-        # ==============================================================================
-
-        log() {
-            echo -e "${YELLOW}>${NC} $1"
-        }
-
-        fail() {
-            echo -e "\n${RED}ERROR: $1${NC}" >&2
-            exit 1
-        }
-
-        setup() {
-            log "Setting up test environment in '$TEST_DIR'..."
-
-            # Copy the test application
-            cp "{{.PATH_DEP_DOTNET_TEST_DLL}}" "$TEST_APP_DLL"
-            cp "{{.PATH_DEP_DOTNET_STRING_REPLACER}}" "$REPLACER_PATH"
-            chmod +x "$REPLACER_PATH"
-            log "Setup complete."
-        }
-
-        run_patcher() {
-            log "Running StringReplacer: '$REPLACER_PATH' '$TEST_APP_DLL'..."
-
-            "$REPLACER_PATH" \
-              "$TEST_APP_DLL" \
-              --match-pattern "$MATCH_PATTERN" \
-              --replace-regex "$REPLACE_REGEX" \
-              --replace-content "$REPLACE_CONTENT"
-
-            if [ ! -f "$PATCHED_APP_DLL" ]; then
-                fail "Patcher did not create the output file: '$PATCHED_APP_DLL'"
-            fi
-            log "Patcher finished."
-        }
-
-        verify_patch() {
-            log "Verifying patched assembly..."
-
-            local il_output_dir="$TEST_DIR/TestApp.patched.il.output"
-            mkdir -p "$il_output_dir"
-
-            local il_file="$il_output_dir/TestApp.patched.il"
-
-            log "Decompiling '$PATCHED_APP_DLL' to '$il_file'..."
-            # Use the COMMAND_DECOMPILE_DLL from Taskfile env
-            {{.COMMAND_DECOMPILE_DLL}} "$PATCHED_APP_DLL" -out="$il_file"
-
-            # --- Verify IL Replacements ---
-            local il_count
-            il_count=$(grep 'https://b.com/' "$il_file" | grep -c "$REPLACE_CONTENT" || true)
-            log "Found $il_count IL replacements. (Expected: $EXPECTED_IL_REPLACEMENTS)"
-            if [ "$il_count" -ne "$EXPECTED_IL_REPLACEMENTS" ]; then
-                fail "IL verification failed. Expected $EXPECTED_IL_REPLACEMENTS replacements, but found $il_count."
-            fi
-
-            # --- Verify Resource Replacements ---
-            local resource_count
-            resource_count=$(grep 'https://b.com/' "$il_file" | grep -c "$REPLACE_CONTENT" || true)
-            log "Found $resource_count resource replacements. (Expected: $EXPECTED_RESOURCE_REPLACEMENTS)"
-            if [ "$resource_count" -ne "$EXPECTED_RESOURCE_REPLACEMENTS" ]; then
-                fail "Resource verification failed. Expected $EXPECTED_RESOURCE_REPLACEMENTS replacements, but found $resource_count."
-            fi
-        }
-
-        # Main execution
-        setup
-        run_patcher
-        verify_patch
-
-        echo -e "\n${GREEN}✅ Test passed successfully!${NC}"
-        echo "✅ .NET Tests complete."

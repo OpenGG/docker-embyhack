@@ -112,14 +112,6 @@ tasks:
       - task: _install_tool
         vars: {name: 'ildasm', version: '9.0.7', url: "https://www.nuget.org/api/v2/package/runtime.linux-x64.Microsoft.NETCore.ILDAsm/9.0.7"}
 
-  install_ilasm:
-    desc: "Installs ilasm (IL Assembler) if it is not already present."
-    status:
-      - test -f {{.PATH_BIN}}/ilasm
-    cmds:
-      - task: _install_tool
-        vars: {name: 'ilasm', version: '9.0.7', url: "https://www.nuget.org/api/v2/package/runtime.linux-x64.Microsoft.NETCore.ILAsm/9.0.7"}
-
   _check_system_deps:
     internal: true
     desc: "Internal task to check for required system dependencies and guide installation."

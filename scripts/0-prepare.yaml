@@ -19,7 +19,6 @@ tasks:
       - rm -rf "{{.PATH_BUILD_ROOT}}/*.staging"
 
       # check dependencies
-      - task: deps:install_ilasm
       - task: deps:install_ildasm
       - task: deps:_check_system_deps
       - task: dotnet:dotnet
